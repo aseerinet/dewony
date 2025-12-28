@@ -374,7 +374,7 @@ export default function App() {
         <div className="px-4 mt-6 space-y-6">
            <div className="flex justify-between items-center">
              <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
-             <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button>
+             <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية</button>
            </div>
            {clientDebts.map(debt => (
              <div key={debt.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
