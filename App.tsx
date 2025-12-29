@@ -402,9 +402,19 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
                          {inst.status === InstallmentStatus.PAID && (
 	                            <button onClick={() => sendInstallmentReceipt(debt, inst, displayNo!)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
                          )}
-                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'} } cursor-pointer select-none`} onClick={() => setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة')}
-
-    >{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</span>
+                         {inst.status === InstallmentStatus.POSTPONED ? (
+                          <button
+                            type="button"
+                            className="text-xs font-bold px-2 py-1 rounded-md bg-orange-50 text-orange-600 cursor-pointer select-none"
+                            onClick={() => setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة')}
+                          >
+                            تم التأجيل
+                          </button>
+                        ) : (
+                          <span className="text-xs font-bold px-2 py-1 rounded-md bg-green-50 text-green-600 select-none">
+                            مدفوع
+                          </span>
+                        )}
                        </div>
                      ) : (
                        <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">تسجيل سداد</button>
