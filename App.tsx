@@ -154,6 +154,40 @@ export default function App() {
           paidDate: paidDate, notes: notes
         };
         const allInstallments = [...pastInstallments, updatedCurrent, ...newFutureInstallments];
+       // تعديل القسط
+       if (isPostponed) {
+  const currentNo = currentInstallment.installmentNo;
+
+  if (currentNo != null) {
+    // ابحث عن أول قسط لاحق غير مسدد وغير مؤجل
+    const next = allInstallments.find(
+      i =>
+        i.id !== currentInstallment.id &&
+        i.status !== InstallmentStatus.PAID &&
+        i.status !== InstallmentStatus.POSTPONED
+    );
+
+    if (next) {
+      next.installmentNo = currentNo;
+
+      // إعادة ترقيم بقية الأقساط النشطة بعده (اختياري لكن صحيح)
+      let n = currentNo + 1;
+      allInstallments.forEach(i => {
+        if (
+          i !== next &&
+          i.status !== InstallmentStatus.PAID &&
+          i.status !== InstallmentStatus.POSTPONED &&
+          i.installmentNo != null
+        ) {
+          i.installmentNo = n++;
+        }
+      });
+    }
+  }
+}
+ 
+       
+        
         allInstallments.sort((a, b) => a.dueDate - b.dueDate);
         const allPaid = allInstallments.every(i => i.status === InstallmentStatus.PAID || i.status === InstallmentStatus.POSTPONED);
         return { ...debt, installments: allInstallments, isFullyPaid: allPaid, monthCount: pastInstallments.length + 1 + newFutureInstallments.length };
@@ -374,7 +408,7 @@ export default function App() {
         <div className="px-4 mt-6 space-y-6">
            <div className="flex justify-between items-center">
              <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
-             <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية</button>
+             <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button>
            </div>
            {clientDebts.map(debt => (
              <div key={debt.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
@@ -640,3 +674,4 @@ export default function App() {
     </div>
   );
 }
+
