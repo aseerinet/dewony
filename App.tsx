@@ -22,7 +22,7 @@ const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'];
 
 export default function App() {
   // --- STATE ---
-const [postponedNote, setPostponedNote] = useState<string | null>(null);
+const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string } | null>(null);
 
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem('debtCollectorData');
@@ -411,10 +411,14 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
                           <button
                             type="button"
                             className="text-xs font-bold px-2 py-1 rounded-md bg-orange-50 text-orange-600 cursor-pointer select-none"
-                           onClick={(e) => {
-  e.stopPropagation();
-  setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة');
-}}
+                           onClick={() =>
+  setPostponedInfo({
+    date: inst.dueDate, // تاريخ القسط المؤجل
+    note: inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة'
+  })
+}
+
+
 
                           >
                             تم التأجيل
@@ -670,54 +674,62 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
       <TabBar currentView={currentView} onChangeView={setCurrentView} />
     </div>
 
-    {postponedNote !== null && (
-      <div
-        onClick={() => setPostponedNote(null)}
+   {postponedInfo !== null && (
+  <div
+    onClick={() => setPostponedInfo(null)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.45)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 999999
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        borderRadius: 14,
+        padding: 18,
+        width: '90%',
+        maxWidth: 420,
+        boxShadow: '0 12px 30px rgba(0,0,0,0.20)',
+        textAlign: 'center'
+      }}
+    >
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
+
+      {/* التاريخ */}
+      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
+        تاريخ القسط: {formatDate(postponedInfo.date)}
+      </div>
+
+      {/* الملاحظة */}
+      <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#374151' }}>
+        {postponedInfo.note}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setPostponedInfo(null)}
         style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.45)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999999
+          marginTop: 14,
+          padding: '10px 16px',
+          borderRadius: 12,
+          background: '#111827',
+          color: '#fff',
+          fontWeight: 700,
+          width: '100%'
         }}
       >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            background: '#fff',
-            borderRadius: 14,
-            padding: 18,
-            width: '90%',
-            maxWidth: 420,
-            boxShadow: '0 12px 30px rgba(0,0,0,0.20)',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{ fontWeight: 800, marginBottom: 10 }}>ملاحظة التأجيل</div>
-          <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#374151' }}>
-            {postponedNote}
-          </div>
+        إغلاق
+      </button>
+    </div>
+  </div>
+)}
 
-          <button
-            type="button"
-            onClick={() => setPostponedNote(null)}
-            style={{
-              marginTop: 14,
-              padding: '10px 16px',
-              borderRadius: 12,
-              background: '#111827',
-              color: '#fff',
-              fontWeight: 700,
-              width: '100%'
-            }}
-          >
-            خروج
-          </button>
-        </div>
-      </div>
-    )}
   </>
 );
 
