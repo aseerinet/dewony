@@ -303,6 +303,14 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
   };
 
   const ClientDetailsView = () => {
+    <button
+  type="button"
+  onClick={() => setPostponedNote('TEST: الرسالة تعمل ✅')}
+  className="text-xs px-3 py-2 rounded-lg bg-black text-white"
+>
+  اختبار الرسالة
+</button>
+
     const client = data.clients.find(c => c.id === selectedClientId);
     if (!client) return null;
     const clientDebts = data.debts.filter(d => d.clientId === client.id);
@@ -406,7 +414,11 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
                           <button
                             type="button"
                             className="text-xs font-bold px-2 py-1 rounded-md bg-orange-50 text-orange-600 cursor-pointer select-none"
-                            onClick={() => setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة')}
+                           onClick={(e) => {
+  e.stopPropagation();
+  setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة');
+}}
+
                           >
                             تم التأجيل
                           </button>
@@ -691,39 +703,69 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
   };
 
   // --- MAIN RENDER ---
-  return (
-     <>
- <style>{`
-      .modal-overlay{
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-      }
-      .modal-box{
-        background:#fff;
-        padding:20px;
-        border-radius:10px;
-        max-width:400px;
-        width:90%;
-        text-align:center;
-      }
-      .modal-box h3{ margin-top:0; }
-      .modal-box button{ margin-top:15px; padding:8px 16px; }
-    `}</style>
+ return (
+  <>
     <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden font-tajawal">
-       {currentView === 'DASHBOARD' && <DashboardView />}
-       {currentView === 'CLIENTS_LIST' && <ClientsListView />}
-       {currentView === 'CLIENT_DETAILS' && <ClientDetailsView />}
-       {currentView === 'ADD_CLIENT' && <AddClientView />}
-       {(currentView === 'ADD_DEBT' || currentView === 'EDIT_DEBT') && <DebtFormView />}
-       {currentView === 'RECORD_PAYMENT' && <RecordPaymentView />}
-       {currentView === 'SETTINGS' && <SettingsView />}
+      {currentView === 'DASHBOARD' && <DashboardView />}
+      {currentView === 'CLIENTS_LIST' && <ClientsListView />}
+      {currentView === 'CLIENT_DETAILS' && <ClientDetailsView />}
+      {currentView === 'ADD_CLIENT' && <AddClientView />}
+      {(currentView === 'ADD_DEBT' || currentView === 'EDIT_DEBT') && <DebtFormView />}
+      {currentView === 'RECORD_PAYMENT' && <RecordPaymentView />}
+      {currentView === 'SETTINGS' && <SettingsView />}
 
-       <TabBar currentView={currentView} onChangeView={setCurrentView} />
+      <TabBar currentView={currentView} onChangeView={setCurrentView} />
     </div>
-  );
+
+    {postponedNote !== null && (
+      <div
+        onClick={() => setPostponedNote(null)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: '#fff',
+            borderRadius: 14,
+            padding: 18,
+            width: '90%',
+            maxWidth: 420,
+            boxShadow: '0 12px 30px rgba(0,0,0,0.20)',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ fontWeight: 800, marginBottom: 10 }}>ملاحظة التأجيل</div>
+          <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#374151' }}>
+            {postponedNote}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setPostponedNote(null)}
+            style={{
+              marginTop: 14,
+              padding: '10px 16px',
+              borderRadius: 12,
+              background: '#111827',
+              color: '#fff',
+              fontWeight: 700,
+              width: '100%'
+            }}
+          >
+            إغلاق
+          </button>
+        </div>
+      </div>
+    )}
+  </>
+);
+
 }
