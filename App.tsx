@@ -12,7 +12,6 @@ import { Client, Debt, Installment, AppData, ViewState, InstallmentStatus } from
 import { formatCurrency, formatDate, generateId, calculatePlan } from './utils';
 
 // --- EMPTY INITIAL DATA ---
-const [postponedNote, setPostponedNote] = useState<string | null>(null);
 
 const INITIAL_DATA: AppData = {
   clients: [],
@@ -24,6 +23,8 @@ const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'];
 
 export default function App() {
   // --- STATE ---
+const [postponedNote, setPostponedNote] = useState<string | null>(null);
+
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem('debtCollectorData');
     if (saved) {
@@ -402,18 +403,10 @@ export default function App() {
                          {inst.status === InstallmentStatus.PAID && (
 	                            <button onClick={() => sendInstallmentReceipt(debt, inst, displayNo!)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
                          )}
-                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}   onClick={() => setPostponedNote(installment.notes || 'لا توجد ملاحظة مسجلة')}
-   >{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</span>
-                        {postponedNote !== null && (
-  <div className="modal-overlay">
-    <div className="modal-box">
-      <h3>ملاحظة التأجيل</h3>
-      <p>{postponedNote}</p>
-      <button onClick={() => setPostponedNote(null)}>إغلاق</button>
-    </div>
-  </div>
-)}
+                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}     onClick={() => setPostponedNote(inst.notes || 'لا توجد ملاحظة مسجلة')}
 
+   >{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</span>
+                        
                        </div>
                      ) : (
                        <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">تسجيل سداد</button>
@@ -426,8 +419,19 @@ export default function App() {
 	             </div>
 	           );
 	           })}
-           {clientDebts.length === 0 && <p className="text-center text-gray-400 text-sm py-10">لا توجد ديون مسجلة حالياً</p>}
+ {clientDebts.length === 0 && <p className="text-center text-gray-400 text-sm py-10">لا توجد ديون مسجلة حالياً</p>}
         </div>
+          {postponedNote !== null && (
+  <div className="modal-overlay" onClick={() => setPostponedNote(null)}>
+    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+      <h3>ملاحظة التأجيل</h3>
+      <p>{postponedNote}</p>
+      <button onClick={() => setPostponedNote(null)}>إغلاق</button>
+    </div>
+  </div>
+)}
+
+   
       </div>
     );
   };
@@ -645,6 +649,38 @@ export default function App() {
 
   // --- MAIN RENDER ---
   return (
+       <>
+    <style>
+      {`
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+
+        .modal-box {
+          background: #fff;
+          padding: 20px;
+          border-radius: 10px;
+          max-width: 400px;
+          width: 90%;
+          text-align: center;
+        }
+
+        .modal-box h3 {
+          margin-top: 0;
+        }
+
+        .modal-box button {
+          margin-top: 15px;
+          padding: 8px 16px;
+        }
+      `}
+    </style>
     <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden font-tajawal">
        {currentView === 'DASHBOARD' && <DashboardView />}
        {currentView === 'CLIENTS_LIST' && <ClientsListView />}
@@ -658,37 +694,3 @@ export default function App() {
     </div>
   );
 }
-return (
-  <>
-    <style>
-      {`
-       .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modal-box {
-  background: #fff;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-}
-
-.modal-box h3 {
-  margin-top: 0;
-}
-
-.modal-box button {
-  margin-top: 15px;
-  padding: 8px 16px;
-}
-
-      `}
-    </style>
