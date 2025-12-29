@@ -402,7 +402,7 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
                          {inst.status === InstallmentStatus.PAID && (
 	                            <button onClick={() => sendInstallmentReceipt(debt, inst, displayNo!)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
                          )}
-                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}   onClick={() => setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة')}
+                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'} } cursor-pointer select-none`} onClick={() => setPostponedNote(inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة')}
 
     >{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</span>
                        </div>
@@ -420,11 +420,47 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
            {clientDebts.length === 0 && <p className="text-center text-gray-400 text-sm py-10">لا توجد ديون مسجلة حالياً</p>}
         </div>
 {postponedNote !== null && (
-  <div className="modal-overlay" onClick={() => setPostponedNote(null)}>
-    <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-      <h3>ملاحظة التأجيل</h3>
-      <p>{postponedNote}</p>
-      <button onClick={() => setPostponedNote(null)}>إغلاق</button>
+  <div
+    onClick={() => setPostponedNote(null)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.4)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        padding: 16,
+        borderRadius: 12,
+        maxWidth: 420,
+        width: '90%',
+        textAlign: 'center',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.15)'
+      }}
+    >
+      <h3 style={{ fontWeight: 700, marginBottom: 8 }}>ملاحظة التأجيل</h3>
+      <p style={{ fontSize: 14, lineHeight: 1.7, color: '#374151', whiteSpace: 'pre-wrap' }}>
+        {postponedNote}
+      </p>
+      <button
+        onClick={() => setPostponedNote(null)}
+        style={{
+          marginTop: 12,
+          padding: '8px 14px',
+          borderRadius: 10,
+          background: '#111827',
+          color: '#fff',
+          fontSize: 13
+        }}
+      >
+        إغلاق
+      </button>
     </div>
   </div>
 )}
