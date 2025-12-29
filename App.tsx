@@ -155,40 +155,38 @@ export default function App() {
         };
         const allInstallments = [...pastInstallments, updatedCurrent, ...newFutureInstallments];
        // تعديل القسط
-       if (isPostponed) {
+         
+        
+        allInstallments.sort((a, b) => a.dueDate - b.dueDate);
+
+if (isPostponed) {
   const currentNo = currentInstallment.installmentNo;
 
   if (currentNo != null) {
-    // ابحث عن أول قسط لاحق غير مسدد وغير مؤجل
-    const next = allInstallments.find(
-      i =>
-        i.id !== currentInstallment.id &&
-        i.status !== InstallmentStatus.PAID &&
-        i.status !== InstallmentStatus.POSTPONED
+    // (اختياري) لو تبغى المؤجل ما يحمل رقم
+    // updatedCurrent.installmentNo = null;
+
+    const currIdx = allInstallments.findIndex(i => i.id === installmentId);
+
+    const next = allInstallments.find((i, idx) =>
+      idx > currIdx &&
+      i.status !== InstallmentStatus.PAID &&
+      i.status !== InstallmentStatus.POSTPONED
     );
 
     if (next) {
       next.installmentNo = currentNo;
 
-      // إعادة ترقيم بقية الأقساط النشطة بعده (اختياري لكن صحيح)
       let n = currentNo + 1;
-      allInstallments.forEach(i => {
-        if (
-          i !== next &&
-          i.status !== InstallmentStatus.PAID &&
-          i.status !== InstallmentStatus.POSTPONED &&
-          i.installmentNo != null
-        ) {
+      for (let idx = allInstallments.findIndex(x => x.id === next.id) + 1; idx < allInstallments.length; idx++) {
+        const i = allInstallments[idx];
+        if (i.status !== InstallmentStatus.PAID && i.status !== InstallmentStatus.POSTPONED) {
           i.installmentNo = n++;
         }
-      });
+      }
     }
   }
 }
- 
-       
-        
-        allInstallments.sort((a, b) => a.dueDate - b.dueDate);
         const allPaid = allInstallments.every(i => i.status === InstallmentStatus.PAID || i.status === InstallmentStatus.POSTPONED);
         return { ...debt, installments: allInstallments, isFullyPaid: allPaid, monthCount: pastInstallments.length + 1 + newFutureInstallments.length };
       });
@@ -196,6 +194,9 @@ export default function App() {
     });
     setCurrentView('CLIENT_DETAILS');
   };
+  
+  
+  
 
   const deleteClient = (id: string) => {
     if(!confirm('هل أنت متأكد من حذف هذا العميل وجميع ديونه نهائياً؟')) return;
