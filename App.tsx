@@ -306,22 +306,7 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
     const client = data.clients.find(c => c.id === selectedClientId);
     if (!client) return null;
 
-      return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setPostponedNote('TEST: الرسالة تعمل ✅')}
-        className="text-xs px-3 py-2 rounded-lg bg-black text-white"
-      >
-        اختبار الرسالة
-      </button>
-
-      {/* باقي محتوى الصفحة */}
-      ...
-    </div>
-  );
-
-
+     
 
 
 
