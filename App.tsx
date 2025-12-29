@@ -438,51 +438,7 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
 	           })}
            {clientDebts.length === 0 && <p className="text-center text-gray-400 text-sm py-10">لا توجد ديون مسجلة حالياً</p>}
         </div>
-{postponedNote !== null && (
-  <div
-    onClick={() => setPostponedNote(null)}
-    style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.4)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999
-    }}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        background: '#fff',
-        padding: 16,
-        borderRadius: 12,
-        maxWidth: 420,
-        width: '90%',
-        textAlign: 'center',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.15)'
-      }}
-    >
-      <h3 style={{ fontWeight: 700, marginBottom: 8 }}>ملاحظة التأجيل</h3>
-      <p style={{ fontSize: 14, lineHeight: 1.7, color: '#374151', whiteSpace: 'pre-wrap' }}>
-        {postponedNote}
-      </p>
-      <button
-        onClick={() => setPostponedNote(null)}
-        style={{
-          marginTop: 12,
-          padding: '8px 14px',
-          borderRadius: 10,
-          background: '#111827',
-          color: '#fff',
-          fontSize: 13
-        }}
-      >
-        إغلاق
-      </button>
-    </div>
-  </div>
-)}
+
 
       </div>
     );
