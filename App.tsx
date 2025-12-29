@@ -757,7 +757,7 @@ const [postponedNote, setPostponedNote] = useState<string | null>(null);
               width: '100%'
             }}
           >
-            إغلاق
+            خروج
           </button>
         </div>
       </div>
