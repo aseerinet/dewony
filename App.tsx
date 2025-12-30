@@ -42,6 +42,9 @@ const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string 
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
   const [selectedInstallmentId, setSelectedInstallmentId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEditClientOpen, setIsEditClientOpen] = useState(false);
+const [editClientName, setEditClientName] = useState('');
+const [editClientPhone, setEditClientPhone] = useState('');
 
   // Persist Data to LocalStorage whenever state changes
   useEffect(() => {
@@ -164,6 +167,32 @@ const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string 
     });
     setCurrentView('CLIENT_DETAILS');
   };
+   
+    const openEditClient = (client: Client) => {
+  setEditClientName(client.name || '');
+  setEditClientPhone((client.phone as any) || '');
+  setIsEditClientOpen(true);
+};
+
+const saveEditClient = () => {
+  if (!selectedClientId) return;
+
+  const name = editClientName.trim();
+  const phone = editClientPhone.trim();
+
+  if (!name) return alert('الرجاء إدخال اسم العميل');
+
+  setData(prev => ({
+    ...prev,
+    clients: prev.clients.map(c =>
+      c.id === selectedClientId ? { ...c, name, phone } : c
+    )
+  }));
+
+  setIsEditClientOpen(false);
+};
+
+
 
   const deleteClient = (id: string) => {
     if(!confirm('هل أنت متأكد من حذف هذا العميل وجميع ديونه نهائياً؟')) return;
@@ -365,7 +394,26 @@ const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string 
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => { setSelectedClientId(null); setCurrentView('CLIENTS_LIST'); }} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button>
             <h2 className="font-bold text-lg">ملف العميل</h2>
-            <button onClick={() => deleteClient(client.id)} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100 transition-colors" title="حذف العميل نهائياً"><Trash2 size={22} /></button>
+          <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={() => openEditClient(client)}
+    className="text-blue-600 p-2 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors"
+    title="تعديل بيانات العميل"
+  >
+    <Edit size={22} />
+  </button>
+
+  <button
+    type="button"
+    onClick={() => deleteClient(client.id)}
+    className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100 transition-colors"
+    title="حذف العميل نهائياً"
+  >
+    <Trash2 size={22} />
+  </button>
+</div>
+
           </div>
           <div className="flex flex-col items-center">
             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold mb-3">{client.name.charAt(0)}</div>
@@ -662,6 +710,65 @@ const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string 
   // --- MAIN RENDER ---
  return (
   <>
+       
+      {isEditClientOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-gray-900">تعديل بيانات العميل</h3>
+        <button
+          type="button"
+          onClick={() => setIsEditClientOpen(false)}
+          className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+          aria-label="إغلاق"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">اسم العميل</label>
+          <input
+            value={editClientName}
+            onChange={(e) => setEditClientName(e.target.value)}
+            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+            placeholder="اسم العميل"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">رقم الجوال</label>
+          <input
+            value={editClientPhone}
+            onChange={(e) => setEditClientPhone(e.target.value)}
+            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+            placeholder="05xxxxxxxx"
+            inputMode="tel"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 mt-4">
+        <button
+          type="button"
+          onClick={saveEditClient}
+          className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors"
+        >
+          حفظ
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsEditClientOpen(false)}
+          className="flex-1 bg-gray-100 text-gray-800 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+        >
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden font-tajawal">
       {currentView === 'DASHBOARD' && <DashboardView />}
       {currentView === 'CLIENTS_LIST' && <ClientsListView />}
