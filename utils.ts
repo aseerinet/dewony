@@ -9,7 +9,7 @@ export const formatCurrency = (amount: number) => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
-/*
+
 export const formatDate = (timestamp: number) => {
   return new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
@@ -17,14 +17,7 @@ export const formatDate = (timestamp: number) => {
     day: 'numeric',
   }).format(new Date(timestamp));
 };
-*/
-export const formatDate = (timestamp: number) => {
-  return new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(timestamp));
-};
+
 export const generateId = () => {
   return Math.random().toString(36).substr(2, 9);
 };
