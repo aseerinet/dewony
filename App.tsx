@@ -847,7 +847,7 @@ const saveEditClient = () => {
     <div
       onClick={(e) => e.stopPropagation()}
       style={{
-        background: '#FFEAD1',
+        background: '#fff',
         borderRadius: 14,
         padding: 18,
         width: '90%',
@@ -856,7 +856,7 @@ const saveEditClient = () => {
         textAlign: 'center'
       }}
     >
-      <div style={{ fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
+      <div style={{background:#FF7700, fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
 
       {/* التاريخ */}
       <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
@@ -864,7 +864,7 @@ const saveEditClient = () => {
       </div>
 
       {/* الملاحظة */}
-      <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#D40000' }}>
+      <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#D40000',fontWeight: 800}}>
         {postponedInfo.note}
       </div>
 
@@ -875,7 +875,7 @@ const saveEditClient = () => {
           marginTop: 14,
           padding: '10px 16px',
           borderRadius: 12,
-          background: '#111827',
+          background: '#FF7700',
           color: '#fff',
           fontWeight: 700,
           width: '100%'
