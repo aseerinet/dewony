@@ -856,7 +856,7 @@ const saveEditClient = () => {
         textAlign: 'center'
       }}
     >
-      <div style={{background:'#FF7700' , fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
+      <div style={{color:'#FF7700' , fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
 
       {/* التاريخ */}
       <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
