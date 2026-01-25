@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, UserPlus, Calendar, CheckCircle2, 
@@ -21,6 +22,8 @@ const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'];
 
 export default function App() {
   // --- STATE ---
+const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string } | null>(null);
+
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem('debtCollectorData');
     if (saved) {
@@ -33,12 +36,15 @@ export default function App() {
     }
     return INITIAL_DATA;
   });
-  
+
   const [currentView, setCurrentView] = useState<ViewState>('DASHBOARD');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
   const [selectedInstallmentId, setSelectedInstallmentId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isEditClientOpen, setIsEditClientOpen] = useState(false);
+const [editClientName, setEditClientName] = useState('');
+const [editClientPhone, setEditClientPhone] = useState('');
 
   // Persist Data to LocalStorage whenever state changes
   useEffect(() => {
@@ -103,10 +109,10 @@ export default function App() {
 
   const saveDebt = (debtData: any, isEdit: boolean) => {
     const { id, clientId, itemName, baseValue, profitPercentage, monthCount, startDate, paymentDay, installments } = debtData;
-    
+
     const finalInstallmentsTotal = installments.reduce((sum: number, i: any) => sum + Number(i.amount), 0);
     const profitValue = finalInstallmentsTotal - Number(baseValue);
-    
+
     const processedInstallments = installments.map((inst: any) => ({
       ...inst,
       id: inst.id || generateId(),
@@ -161,6 +167,32 @@ export default function App() {
     });
     setCurrentView('CLIENT_DETAILS');
   };
+   
+    const openEditClient = (client: Client) => {
+  setEditClientName(client.name || '');
+  setEditClientPhone((client.phone as any) || '');
+  setIsEditClientOpen(true);
+};
+
+const saveEditClient = () => {
+  if (!selectedClientId) return;
+
+  const name = editClientName.trim();
+  const phone = editClientPhone.trim();
+
+  if (!name) return alert('الرجاء إدخال اسم العميل');
+
+  setData(prev => ({
+    ...prev,
+    clients: prev.clients.map(c =>
+      c.id === selectedClientId ? { ...c, name, phone } : c
+    )
+  }));
+
+  setIsEditClientOpen(false);
+};
+
+
 
   const deleteClient = (id: string) => {
     if(!confirm('هل أنت متأكد من حذف هذا العميل وجميع ديونه نهائياً؟')) return;
@@ -260,28 +292,7 @@ export default function App() {
   );
 
   const ClientsListView = () => {
-    // Calculate totals for sorting and styling
-    const clientsWithTotals = useMemo(() => {
-      return data.clients.map(client => {
-        const clientDebts = data.debts.filter(d => d.clientId === client.id);
-        const total = clientDebts.reduce((acc, curr) => acc + curr.totalValue, 0);
-        const paid = clientDebts.reduce((acc, curr) => acc + curr.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0), 0);
-        const remaining = total - paid;
-        return { ...client, total, paid, remaining };
-      });
-    }, [data.clients, data.debts]);
-
-    // Custom Sort: Active debts first (by remaining amount), then zero-debt clients at the bottom
-    const filteredClients = clientsWithTotals
-      .filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm))
-      .sort((a, b) => {
-        const aIsPaid = a.remaining <= 0;
-        const bIsPaid = b.remaining <= 0;
-        if (aIsPaid && !bIsPaid) return 1;
-        if (!aIsPaid && bIsPaid) return -1;
-        return b.remaining - a.remaining; // descending by debt amount
-      });
-
+    const filteredClients = data.clients.filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm));
     return (
       <div className="pb-24 pt-4 px-4 h-full flex flex-col">
         <div className="flex justify-between items-center mb-4">
@@ -294,26 +305,17 @@ export default function App() {
         </div>
         <div className="space-y-3 overflow-y-auto no-scrollbar pb-20">
           {filteredClients.map(client => {
-            const isFullyPaid = client.remaining <= 0;
+            const clientDebts = data.debts.filter(d => d.clientId === client.id);
+            const totalDebt = clientDebts.reduce((acc, curr) => acc + curr.totalValue, 0);
+            const paidDebt = clientDebts.reduce((acc, curr) => acc + curr.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0), 0);
+            const remaining = totalDebt - paidDebt;
             return (
-              <div key={client.id} 
-                onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} 
-                className={`bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer ${isFullyPaid ? 'opacity-50 grayscale border-dashed border-gray-200' : 'border border-transparent'}`}>
+              <div key={client.id} onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} className="bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className={`font-bold ${isFullyPaid ? 'text-gray-400' : 'text-gray-800'}`}>{client.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{client.phone}</p>
-                  </div>
-                  <div className="text-left">
-                    <span className="block text-xs text-gray-400">المتبقي</span>
-                    <span className={`font-bold ${isFullyPaid ? 'text-gray-400' : 'text-red-500'}`}>{isFullyPaid ? '0' : formatCurrency(client.remaining)}</span>
-                  </div>
+                  <div><h3 className="font-bold text-gray-800">{client.name}</h3><p className="text-xs text-gray-500 mt-1">{client.phone}</p></div>
+                  <div className="text-left"><span className="block text-xs text-gray-400">المتبقي</span><span className="font-bold text-red-500">{formatCurrency(remaining)}</span></div>
                 </div>
-                {!isFullyPaid && (
-                   <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
-                     <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${client.total > 0 ? (client.paid / client.total) * 100 : 0}%` }} />
-                   </div>
-                )}
+                <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
               </div>
             );
           })}
@@ -332,27 +334,59 @@ export default function App() {
   const ClientDetailsView = () => {
     const client = data.clients.find(c => c.id === selectedClientId);
     if (!client) return null;
+
+
+
+
+
     const clientDebts = data.debts.filter(d => d.clientId === client.id);
 
     const sendWhatsAppSummary = () => {
       const total = clientDebts.reduce((acc, d) => acc + d.totalValue, 0);
       const paid = clientDebts.reduce((acc, d) => acc + d.installments.filter(i => i.status === 'PAID').reduce((s, i) => s + i.amount, 0), 0);
       const remaining = total - paid;
-      const message = `مرحباً ${client.name}،\nإليك ملخص حسابك:\nإجمالي الديون: ${total}\nالمسدد: ${paid}\nالمتبقي: ${remaining}\nشكراً لتعاملك معنا.`;
+      const message = `مرحباً ${client.name}،\nإليك ملخص حسابك:\nإجمالي الديون: ${formatCurrency(total)}\nالمسدد: ${formatCurrency(paid)}\nالمتبقي: ${formatCurrency(remaining)}\nشكراً لتعاملك معنا.`;
       window.open(`https://wa.me/${client.phone.replace('+', '')}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
-    const sendInstallmentReceipt = (debt: Debt, inst: Installment, index: number) => {
-        const totalPaidForDebt = debt.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0);
-        const remainingForDebt = debt.totalValue - totalPaidForDebt;
-        
-        // Use a code derived from ID as a "Receipt Number" (e.g., 362)
-        const receiptNo = inst.id.slice(-3).toUpperCase();
+    const sendInstallmentReceipt = (debt: Debt, inst: Installment, receiptNumber: number) => {
+  if (!client) return;
 
-        // Exact template from the user's provided image
-        const message = `مرحباً ${client.name} ${receiptNo}،\nإليك ملخص حسابك:\nإجمالي الديون: ${debt.totalValue}\nالمسدد: ${totalPaidForDebt}\nالمتبقي: ${remainingForDebt}\nشكراً لتعاملك معنا.`;
-        window.open(`https://wa.me/${client.phone.replace('+', '')}?text=${encodeURIComponent(message)}`, '_blank');
-    };
+  const totalDebt = clientDebts.reduce(
+    (acc, d) => acc + (d.totalValue || 0),
+    0
+  );
+
+  const totalPaid = clientDebts.reduce((acc, d) => {
+    const paidForDebt = (d.installments || [])
+      .filter(i => i.status === 'PAID' || i.status === InstallmentStatus.PAID)
+      .reduce((s, i) => s + (i.amount || 0), 0);
+    return acc + paidForDebt;
+  }, 0);
+
+  const remainingTotal = totalDebt - totalPaid;
+
+  const message = `سند سداد قسط
+
+العميل: ${client.name} 
+رقم القسط: ${receiptNumber}
+المبلغ: ${formatCurrency(inst.amount)}
+التاريخ: ${formatDate(inst.paidDate || Date.now())}
+
+إجمالي المديونية: ${formatCurrency(totalDebt)}
+إجمالي المسدد: ${formatCurrency(totalPaid)}
+إجمالي المتبقي: ${formatCurrency(remainingTotal)}
+
+شكراً لسدادكم.`;
+
+  const phone = String(client.phone || '').replace(/\D/g, '');
+  if (!phone) return;
+
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+    '_blank'
+  );
+};
 
     return (
       <div className="pb-24 bg-gray-50 min-h-screen animate-fade-in">
@@ -361,6 +395,26 @@ export default function App() {
             <button onClick={() => { setSelectedClientId(null); setCurrentView('CLIENTS_LIST'); }} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button>
             <h2 className="font-bold text-lg">ملف العميل</h2>
             <button onClick={() => deleteClient(client.id)} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100 transition-colors" title="حذف العميل نهائياً"><Trash2 size={22} /></button>
+          <div className="flex items-center gap-2">
+  <button
+    type="button"
+    onClick={() => openEditClient(client)}
+    className="text-blue-600 p-2 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors"
+    title="تعديل بيانات العميل"
+  >
+    <Edit size={22} />
+  </button>
+
+  <button
+    type="button"
+    onClick={() => deleteClient(client.id)}
+    className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100 transition-colors"
+    title="حذف العميل نهائياً"
+  >
+    <Trash2 size={22} />
+  </button>
+</div>
+
           </div>
           <div className="flex flex-col items-center">
             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold mb-3">{client.name.charAt(0)}</div>
@@ -376,7 +430,10 @@ export default function App() {
              <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
              <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button>
            </div>
-           {clientDebts.map(debt => (
+	           {clientDebts.map(debt => {
+	             // ترقيم الأقساط: القسط المؤجل لا يأخذ رقم، ورقمه ينتقل تلقائياً للقسط التالي في العرض.
+	             let seqNo = 0;
+	             return (
              <div key={debt.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
                  <div><h4 className="font-bold text-gray-900">{debt.itemName}</h4><p className="text-xs text-gray-500 mt-1">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div>
@@ -385,31 +442,57 @@ export default function App() {
                    <button onClick={() => deleteDebt(debt.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100" title="حذف المديونية"><Trash2 size={16} /></button>
                  </div>
                </div>
-               <div className="divide-y divide-gray-100">
-                 {debt.installments.map((inst, idx) => (
+	               <div className="divide-y divide-gray-100">
+	                 {debt.installments.map((inst) => {
+	                   const displayNo = inst.status === InstallmentStatus.POSTPONED ? null : ++seqNo;
+	                   return (
                    <div key={inst.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                      <div className="flex items-center gap-3">
-                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${inst.status === 'PAID' ? 'bg-green-100 text-green-700' : inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>{idx + 1}</span>
+	                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${inst.status === 'PAID' ? 'bg-green-100 text-green-700' : inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>{displayNo ?? '—'}</span>
                        <div><p className="text-sm font-medium text-gray-900">{formatCurrency(inst.amount)}</p><p className="text-xs text-gray-500">{formatDate(inst.dueDate)}</p></div>
                      </div>
                      {inst.status === InstallmentStatus.PAID || inst.status === InstallmentStatus.POSTPONED ? (
                        <div className="flex items-center gap-2">
                          {inst.status === InstallmentStatus.PAID && (
-                            <button onClick={() => sendInstallmentReceipt(debt, inst, idx)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
+	                            <button onClick={() => sendInstallmentReceipt(debt, inst, displayNo!)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
                          )}
-                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</span>
+                         {inst.status === InstallmentStatus.POSTPONED ? (
+                          <button
+                            type="button"
+                            className="text-xs font-bold px-2 py-1 rounded-md bg-orange-50 text-orange-600 cursor-pointer select-none"
+                           onClick={() =>
+  setPostponedInfo({
+    date: inst.dueDate, // تاريخ القسط المؤجل
+    note: inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة'
+  })
+}
+
+
+
+                          >
+                            تم التأجيل
+                          </button>
+                        ) : (
+                          <span className="text-xs font-bold px-2 py-1 rounded-md bg-green-50 text-green-600 select-none">
+                            مدفوع
+                          </span>
+                        )}
                        </div>
                      ) : (
                        <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">تسجيل سداد</button>
                      )}
                    </div>
-                 ))}
+	                 );
+	                 })}
                </div>
                <div className="p-3 bg-gray-50 border-t border-gray-100 text-center"><div className="flex justify-between items-center text-sm"><span className="text-gray-500">الإجمالي:</span><span className="font-bold text-gray-800">{formatCurrency(debt.totalValue)}</span></div></div>
-             </div>
-           ))}
+	             </div>
+	           );
+	           })}
            {clientDebts.length === 0 && <p className="text-center text-gray-400 text-sm py-10">لا توجد ديون مسجلة حالياً</p>}
         </div>
+
+
       </div>
     );
   };
@@ -426,7 +509,7 @@ export default function App() {
           <div className="flex items-center gap-2 text-blue-600 font-bold border-b pb-3 mb-2">
             <Database size={20} /> <h3>إدارة البيانات</h3>
           </div>
-          
+
           <button onClick={exportData} className="w-full flex items-center justify-between p-4 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors">
             <div className="flex items-center gap-3"><Download size={20} /><span className="font-bold text-sm">تصدير نسخة احتياطية</span></div>
             <ArrowLeft className="rotate-180" size={16} />
@@ -626,17 +709,136 @@ export default function App() {
   };
 
   // --- MAIN RENDER ---
-  return (
-    <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden font-tajawal">
-       {currentView === 'DASHBOARD' && <DashboardView />}
-       {currentView === 'CLIENTS_LIST' && <ClientsListView />}
-       {currentView === 'CLIENT_DETAILS' && <ClientDetailsView />}
-       {currentView === 'ADD_CLIENT' && <AddClientView />}
-       {(currentView === 'ADD_DEBT' || currentView === 'EDIT_DEBT') && <DebtFormView />}
-       {currentView === 'RECORD_PAYMENT' && <RecordPaymentView />}
-       {currentView === 'SETTINGS' && <SettingsView />}
+ return (
+  <>
+       
+      {isEditClientOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-gray-900">تعديل بيانات العميل</h3>
+        <button
+          type="button"
+          onClick={() => setIsEditClientOpen(false)}
+          className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+          aria-label="إغلاق"
+        >
+          ✕
+        </button>
+      </div>
 
-       <TabBar currentView={currentView} onChangeView={setCurrentView} />
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">اسم العميل</label>
+          <input
+            value={editClientName}
+            onChange={(e) => setEditClientName(e.target.value)}
+            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+            placeholder="اسم العميل"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">رقم الجوال</label>
+          <input
+            value={editClientPhone}
+            onChange={(e) => setEditClientPhone(e.target.value)}
+            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm"
+            placeholder="05xxxxxxxx"
+            inputMode="tel"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 mt-4">
+        <button
+          type="button"
+          onClick={saveEditClient}
+          className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors"
+        >
+          حفظ
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsEditClientOpen(false)}
+          className="flex-1 bg-gray-100 text-gray-800 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition-colors"
+        >
+          إلغاء
+        </button>
+      </div>
     </div>
-  );
+  </div>
+)}
+
+    <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden font-tajawal">
+      {currentView === 'DASHBOARD' && <DashboardView />}
+      {currentView === 'CLIENTS_LIST' && <ClientsListView />}
+      {currentView === 'CLIENT_DETAILS' && <ClientDetailsView />}
+      {currentView === 'ADD_CLIENT' && <AddClientView />}
+      {(currentView === 'ADD_DEBT' || currentView === 'EDIT_DEBT') && <DebtFormView />}
+      {currentView === 'RECORD_PAYMENT' && <RecordPaymentView />}
+      {currentView === 'SETTINGS' && <SettingsView />}
+
+      <TabBar currentView={currentView} onChangeView={setCurrentView} />
+    </div>
+
+   {postponedInfo !== null && (
+  <div
+    onClick={() => setPostponedInfo(null)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.45)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 999999
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        borderRadius: 14,
+        padding: 18,
+        width: '90%',
+        maxWidth: 420,
+        boxShadow: '0 12px 30px rgba(0,0,0,0.20)',
+        textAlign: 'center'
+      }}
+    >
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
+
+      {/* التاريخ */}
+      <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
+        تاريخ القسط: {formatDate(postponedInfo.date)}
+      </div>
+
+      {/* الملاحظة */}
+      <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#374151' }}>
+        {postponedInfo.note}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setPostponedInfo(null)}
+        style={{
+          marginTop: 14,
+          padding: '10px 16px',
+          borderRadius: 12,
+          background: '#111827',
+          color: '#fff',
+          fontWeight: 700,
+          width: '100%'
+        }}
+      >
+        إغلاق
+      </button>
+    </div>
+  </div>
+)}
+
+  </>
+);
+
 }
