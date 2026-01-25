@@ -864,7 +864,7 @@ const saveEditClient = () => {
       </div>
 
       {/* الملاحظة */}
-      <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#374151' }}>
+      <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#D40000' }}>
         {postponedInfo.note}
       </div>
 
