@@ -329,6 +329,44 @@ const saveEditClient = () => {
             const totalDebt = clientDebts.reduce((acc, curr) => acc + curr.totalValue, 0);
             const paidDebt = clientDebts.reduce((acc, curr) => acc + curr.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0), 0);
             const remaining = totalDebt - paidDebt;
+		    const isFullyPaid = client.remaining <= 0;
+            return (
+              <div key={client.id} onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} className="bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer">
+              <div key={client.id} 
+                onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} 
+                className={`bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer ${isFullyPaid ? 'opacity-50 grayscale border-dashed border-gray-200' : 'border border-transparent'}`}>
+                <div className="flex justify-between items-start">
+                  <div><h3 className="font-bold text-gray-800">{client.name}</h3><p className="text-xs text-gray-500 mt-1">{client.phone}</p></div>
+                  <div className="text-left"><span className="block text-xs text-gray-400">المتبقي</span><span className="font-bold text-red-500">{formatCurrency(remaining)}</span></div>
+                  <div>
+                    <h3 className={`font-bold ${isFullyPaid ? 'text-gray-400' : 'text-gray-800'}`}>{client.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{client.phone}</p>
+                  </div>
+                  <div className="text-left">
+                    <span className="block text-xs text-gray-400">المتبقي</span>
+                    <span className={`font-bold ${isFullyPaid ? 'text-gray-400' : 'text-red-500'}`}>{isFullyPaid ? '0' : formatCurrency(client.remaining)}</span>
+                  </div>
+                </div>
+                <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
+                {!isFullyPaid && (
+                   <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
+                     <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${client.total > 0 ? (client.paid / client.total) * 100 : 0}%` }} />
+                   </div>
+                )}
+              </div>
+            );
+          })}
+          {filteredClients.length === 0 && (
+            <div className="text-center py-10 text-gray-400 animate-fade-in">
+              <Users size={48} className="mx-auto mb-2 opacity-30" />
+              <p>لا يوجد عملاء مضافون حالياً</p>
+              <button onClick={() => setCurrentView('ADD_CLIENT')} className="mt-4 text-blue-600 font-bold text-sm">أضف أول عميل الآن</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
             return (
               <div key={client.id} onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} className="bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer">
                 <div className="flex justify-between items-start">
