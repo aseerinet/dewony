@@ -313,15 +313,10 @@ const saveEditClient = () => {
         if (!aIsPaid && bIsPaid) return -1;
         return b.remaining - a.remaining; // descending by debt amount
       });
-	  return (
+	 return (
       <div className="pb-24 pt-4 px-4 h-full flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">العملاء</h2>
-          <button onClick={() => setCurrentView('ADD_CLIENT')} className="text-blue-600 p-2 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors"><UserPlus size={24} /></button>
-        </div>
-        <div className="relative mb-6">
-          <input type="text" placeholder="بحث باسم العميل أو الجوال..." className="w-full bg-white pl-4 pr-10 py-3 rounded-xl border-none shadow-sm text-sm focus:ring-2 focus:ring-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          <Search className="absolute right-3 top-3 text-gray-400" size={20} />
+@@ -305,115 +294,73 @@
         </div>
         <div className="space-y-3 overflow-y-auto no-scrollbar pb-20">
           {filteredClients.map(client => {
@@ -329,7 +324,7 @@ const saveEditClient = () => {
             const totalDebt = clientDebts.reduce((acc, curr) => acc + curr.totalValue, 0);
             const paidDebt = clientDebts.reduce((acc, curr) => acc + curr.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0), 0);
             const remaining = totalDebt - paidDebt;
-		    const isFullyPaid = client.remaining <= 0;
+            const isFullyPaid = client.remaining <= 0;
             return (
               <div key={client.id} onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} className="bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer">
               <div key={client.id} 
@@ -348,34 +343,6 @@ const saveEditClient = () => {
                   </div>
                 </div>
                 <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
-                {!isFullyPaid && (
-                   <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
-                     <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${client.total > 0 ? (client.paid / client.total) * 100 : 0}%` }} />
-                   </div>
-                )}
-              </div>
-            );
-          })}
-          {filteredClients.length === 0 && (
-            <div className="text-center py-10 text-gray-400 animate-fade-in">
-              <Users size={48} className="mx-auto mb-2 opacity-30" />
-              <p>لا يوجد عملاء مضافون حالياً</p>
-              <button onClick={() => setCurrentView('ADD_CLIENT')} className="mt-4 text-blue-600 font-bold text-sm">أضف أول عميل الآن</button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-            return (
-              <div key={client.id} onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} className="bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-transform cursor-pointer">
-                <div className="flex justify-between items-start">
-                  <div><h3 className="font-bold text-gray-800">{client.name}</h3><p className="text-xs text-gray-500 mt-1">{client.phone}</p></div>
-                  <div className="text-left"><span className="block text-xs text-gray-400">المتبقي</span><span className="font-bold text-red-500">{formatCurrency(remaining)}</span></div>
-                </div>
-                <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
-              </div>
-				                <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
                 {!isFullyPaid && (
                    <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
                      <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${client.total > 0 ? (client.paid / client.total) * 100 : 0}%` }} />
