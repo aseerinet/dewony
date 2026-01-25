@@ -293,7 +293,27 @@ const saveEditClient = () => {
 
   const ClientsListView = () => {
     const filteredClients = data.clients.filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm));
-    return (
+     // Calculate totals for sorting and styling
+    const clientsWithTotals = useMemo(() => {
+      return data.clients.map(client => {
+        const clientDebts = data.debts.filter(d => d.clientId === client.id);
+        const total = clientDebts.reduce((acc, curr) => acc + curr.totalValue, 0);
+        const paid = clientDebts.reduce((acc, curr) => acc + curr.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0), 0);
+        const remaining = total - paid;
+        return { ...client, total, paid, remaining };
+      });
+    }, [data.clients, data.debts]);
+	  // Custom Sort: Active debts first (by remaining amount), then zero-debt clients at the bottom
+    const filteredClients = clientsWithTotals
+      .filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm))
+      .sort((a, b) => {
+        const aIsPaid = a.remaining <= 0;
+        const bIsPaid = b.remaining <= 0;
+        if (aIsPaid && !bIsPaid) return 1;
+        if (!aIsPaid && bIsPaid) return -1;
+        return b.remaining - a.remaining; // descending by debt amount
+      });
+	  return (
       <div className="pb-24 pt-4 px-4 h-full flex flex-col">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900">العملاء</h2>
@@ -316,6 +336,13 @@ const saveEditClient = () => {
                   <div className="text-left"><span className="block text-xs text-gray-400">المتبقي</span><span className="font-bold text-red-500">{formatCurrency(remaining)}</span></div>
                 </div>
                 <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
+              </div>
+				                <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalDebt > 0 ? (paidDebt / totalDebt) * 100 : 0}%` }} /></div>
+                {!isFullyPaid && (
+                   <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
+                     <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${client.total > 0 ? (client.paid / client.total) * 100 : 0}%` }} />
+                   </div>
+                )}
               </div>
             );
           })}
