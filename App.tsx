@@ -847,7 +847,7 @@ const saveEditClient = () => {
     <div
       onClick={(e) => e.stopPropagation()}
       style={{
-        background: '#fff',
+        background: '#FFD8AB',
         borderRadius: 14,
         padding: 18,
         width: '90%',
