@@ -517,7 +517,7 @@ const saveEditClient = () => {
              <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
              <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button>
            </div>
-	          {clientDebts.map(debt => (
+	                 {clientDebts.map(debt => (
              <div 
                key={debt.id} 
                className={`bg-white rounded-2xl shadow-sm overflow-hidden border transition-all ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-100'}`}
@@ -560,8 +560,6 @@ const saveEditClient = () => {
     note: inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة'
   })
 }
-
-
 
                           >
                             تم التأجيل
