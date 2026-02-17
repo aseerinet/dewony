@@ -349,6 +349,7 @@ const saveEditClient = () => {
                 setCurrentView('CLIENT_DETAILS'); }} 
                 className={`bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer 
                   ${isFullyPaid ? 'opacity-50 grayscale border-dashed border-gray-200' : 'border border-transparent'}`}
+				  
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -386,10 +387,6 @@ const saveEditClient = () => {
     const client = data.clients.find(c => c.id === selectedClientId);
     if (!client) return null;
 
-
-
-
-
     const clientDebts = data.debts.filter(d => d.clientId === client.id);
 
     const sendWhatsAppSummary = () => {
@@ -403,12 +400,18 @@ const saveEditClient = () => {
     alert('يرجى اختيار مديونية واحدة على الأقل لإرسال كشف الحساب');
     return;
   }
-
+   const toggleDebtSelection = (id: string) => {
+  setSelectedDebtIds(prev => 
+    // إذا كان المعرف موجوداً مسبقاً، قم بحذفه (إلغاء التحديد)
+    // إذا لم يكن موجوداً، قم بإضافته إلى القائمة (تفعيل التحديد)
+    prev.includes(id) ? prev.filter(debtId => debtId !== id) : [...prev, id]
+  );
+};
   // 3. بناء نص الرسالة
   let summaryText = `مرحباً ${client.name}،\nإليك ملخص حسابك للمديونيات المحددة:\n\n`;
   let totalAll = 0;
   let paidAll = 0;
-
+   
   debtsToSummarize.forEach(d => {
     const paid = d.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0);
     const remaining = d.totalValue - paid;
@@ -514,18 +517,19 @@ const saveEditClient = () => {
              <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
              <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button>
            </div>
-	           {clientDebts.map(debt => {
-	             // ترقيم الأقساط: القسط المؤجل لا يأخذ رقم، ورقمه ينتقل تلقائياً للقسط التالي في العرض.
-	             let seqNo = 0;
-	             return (
-             <div key={debt.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+	          {clientDebts.map(debt => (
+             <div 
+               key={debt.id} 
+               className={`bg-white rounded-2xl shadow-sm overflow-hidden border transition-all ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-100'}`}
+             >
                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
-                 <input 
-  type="checkbox" 
-  checked={selectedDebtIds.includes(debt.id)} 
-  onChange={() => toggleDebtSelection(debt.id)}
-  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-/>
+                 <div className="flex items-center gap-3">
+                   <input 
+                     type="checkbox" 
+                     checked={selectedDebtIds.includes(debt.id)} 
+                     onChange={() => toggleDebtSelection(debt.id)}
+                     className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                   />
                  <div><h4 className="font-bold text-gray-900">{debt.itemName}</h4><p className="text-xs text-gray-500 mt-1">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div>
                  <div className="flex gap-2">
                    <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300" title="تعديل"><Edit size={16} /></button>
