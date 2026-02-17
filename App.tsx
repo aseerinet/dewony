@@ -517,7 +517,7 @@ const saveEditClient = () => {
              <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
              <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button>
            </div>
-	                 {clientDebts.map(debt => (
+	                {clientDebts.map(debt => (
              <div 
                key={debt.id} 
                className={`bg-white rounded-2xl shadow-sm overflow-hidden border transition-all ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-100'}`}
@@ -530,61 +530,41 @@ const saveEditClient = () => {
                      onChange={() => toggleDebtSelection(debt.id)}
                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                    />
-                 <div><h4 className="font-bold text-gray-900">{debt.itemName}</h4><p className="text-xs text-gray-500 mt-1">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div>
+                   <div>
+                     <h4 className="font-bold text-gray-900">{debt.itemName}</h4>
+                     <p className="text-xs text-gray-500 mt-1">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p>
+                   </div>
+                 </div>
                  <div className="flex gap-2">
                    <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300" title="تعديل"><Edit size={16} /></button>
                    <button onClick={() => deleteDebt(debt.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100" title="حذف المديونية"><Trash2 size={16} /></button>
                  </div>
                </div>
-	               <div className="divide-y divide-gray-100">
-	                 {debt.installments.map((inst) => {
-	                   const displayNo = inst.status === InstallmentStatus.POSTPONED ? null : ++seqNo;
-	                   return (
+               <div className="divide-y divide-gray-100">
+                 {debt.installments.map((inst, idx) => (
                    <div key={inst.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                      <div className="flex items-center gap-3">
-	                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${inst.status === 'PAID' ? 'bg-green-100 text-green-700' : inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>{displayNo ?? '—'}</span>
+                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${inst.status === 'PAID' ? 'bg-green-100 text-green-700' : inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>{idx + 1}</span>
                        <div><p className="text-sm font-medium text-gray-900">{formatCurrency(inst.amount)}</p><p className="text-xs text-gray-500">{formatDate(inst.dueDate)}</p></div>
                      </div>
                      {inst.status === InstallmentStatus.PAID || inst.status === InstallmentStatus.POSTPONED ? (
                        <div className="flex items-center gap-2">
                          {inst.status === InstallmentStatus.PAID && (
-	                            <button onClick={() => sendInstallmentReceipt(debt, inst, displayNo!)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
+                            <button onClick={() => sendInstallmentReceipt(debt, inst, idx)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100" title="إرسال سند"><Receipt size={16} /></button>
                          )}
-                         {inst.status === InstallmentStatus.POSTPONED ? (
-                          <button
-                            type="button"
-                            className="text-xs font-bold px-2 py-1 rounded-md bg-orange-50 text-orange-600 cursor-pointer select-none"
-                           onClick={() =>
-  setPostponedInfo({
-    date: inst.dueDate, // تاريخ القسط المؤجل
-    note: inst.notes?.trim() ? inst.notes : 'لا توجد ملاحظة مسجلة'
-  })
-}
-
-                          >
-                            تم التأجيل
-                          </button>
-                        ) : (
-                          <span className="text-xs font-bold px-2 py-1 rounded-md bg-green-50 text-green-600 select-none">
-                            مدفوع
-                          </span>
-                        )}
+                         <span className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</span>
                        </div>
                      ) : (
                        <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">تسجيل سداد</button>
                      )}
                    </div>
-	                 );
-	                 })}
+                 ))}
                </div>
                <div className="p-3 bg-gray-50 border-t border-gray-100 text-center"><div className="flex justify-between items-center text-sm"><span className="text-gray-500">الإجمالي:</span><span className="font-bold text-gray-800">{formatCurrency(debt.totalValue)}</span></div></div>
-	             </div>
-	           );
-	           })}
+             </div>
+           ))}
            {clientDebts.length === 0 && <p className="text-center text-gray-400 text-sm py-10">لا توجد ديون مسجلة حالياً</p>}
         </div>
-
-
       </div>
     );
   };
