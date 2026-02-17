@@ -23,7 +23,7 @@ const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'];
 export default function App() {
   // --- STATE ---
 const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string } | null>(null);
-
+const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([]);
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem('debtCollectorData');
     if (saved) {
@@ -344,7 +344,9 @@ const saveEditClient = () => {
             return (
               <div 
                 key={client.id} 
-                onClick={() => { setSelectedClientId(client.id); setCurrentView('CLIENT_DETAILS'); }} 
+                onClick={() => { setSelectedClientId(client.id);
+                setSelectedDebtIds([]); // <-- هذا السطر الجديد
+                setCurrentView('CLIENT_DETAILS'); }} 
                 className={`bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer 
                   ${isFullyPaid ? 'opacity-50 grayscale border-dashed border-gray-200' : 'border border-transparent'}`}
               >
@@ -391,12 +393,45 @@ const saveEditClient = () => {
     const clientDebts = data.debts.filter(d => d.clientId === client.id);
 
     const sendWhatsAppSummary = () => {
-      const total = clientDebts.reduce((acc, d) => acc + d.totalValue, 0);
-      const paid = clientDebts.reduce((acc, d) => acc + d.installments.filter(i => i.status === 'PAID').reduce((s, i) => s + i.amount, 0), 0);
-      const remaining = total - paid;
-      const message = `مرحباً ${client.name}،\nإليك ملخص حسابك:\nإجمالي الديون: ${formatCurrency(total)}\nالمسدد: ${formatCurrency(paid)}\nالمتبقي: ${formatCurrency(remaining)}\nشكراً لتعاملك معنا.`;
-      window.open(`https://wa.me/${client.phone.replace('+', '')}?text=${encodeURIComponent(message)}`, '_blank');
-    };
+  // 1. تحديد المديونيات المطلوب إرسالها (المختارة فقط، أو الجميع إذا لم يتم اختيار شيء)
+  const debtsToSummarize = selectedDebtIds.length > 0 
+    ? clientDebts.filter(d => selectedDebtIds.includes(d.id))
+    : clientDebts;
+
+  // 2. التحقق من وجود مديونيات
+  if (debtsToSummarize.length === 0) {
+    alert('يرجى اختيار مديونية واحدة على الأقل لإرسال كشف الحساب');
+    return;
+  }
+
+  // 3. بناء نص الرسالة
+  let summaryText = `مرحباً ${client.name}،\nإليك ملخص حسابك للمديونيات المحددة:\n\n`;
+  let totalAll = 0;
+  let paidAll = 0;
+
+  debtsToSummarize.forEach(d => {
+    const paid = d.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0);
+    const remaining = d.totalValue - paid;
+    summaryText += `📌 *${d.itemName}*\n- إجمالي: ${formatCurrency(d.totalValue)}\n- المسدد: ${formatCurrency(paid)}\n- المتبقي: ${formatCurrency(remaining)}\n\n`;
+    totalAll += d.totalValue;
+    paidAll += paid;
+  });
+
+  const remainingAll = totalAll - paidAll;
+  
+  // 4. إضافة إجمالي عام إذا كان هناك أكثر من مديونية مختارة
+  if (debtsToSummarize.length > 1) {
+    summaryText += `📊 *الإجمالي العام للمختار:*\n`;
+    summaryText += `- إجمالي الديون: ${formatCurrency(totalAll)}\n`;
+    summaryText += `- إجمالي المسدد: ${formatCurrency(paidAll)}\n`;
+    summaryText += `- إجمالي المتبقي: ${formatCurrency(remainingAll)}\n\n`;
+  }
+
+  summaryText += `شكراً لتعاملك معنا.`;
+  
+  // 5. فتح الواتساب
+  window.open(`https://wa.me/${client.phone.replace('+', '')}?text=${encodeURIComponent(summaryText)}`, '_blank');
+};
 
     const sendInstallmentReceipt = (debt: Debt, inst: Installment, receiptNumber: number) => {
   if (!client) return;
@@ -485,6 +520,12 @@ const saveEditClient = () => {
 	             return (
              <div key={debt.id} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
+                 <input 
+  type="checkbox" 
+  checked={selectedDebtIds.includes(debt.id)} 
+  onChange={() => toggleDebtSelection(debt.id)}
+  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+/>
                  <div><h4 className="font-bold text-gray-900">{debt.itemName}</h4><p className="text-xs text-gray-500 mt-1">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div>
                  <div className="flex gap-2">
                    <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300" title="تعديل"><Edit size={16} /></button>
