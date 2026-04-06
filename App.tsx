@@ -10,18 +10,20 @@ import { TabBar } from './components/TabBar';
 import { Client, Debt, Installment, AppData, ViewState, InstallmentStatus } from './types';
 import { formatCurrency, formatDate, generateId, calculatePlan } from './utils';
 
+// --- EMPTY INITIAL DATA ---
 const INITIAL_DATA: AppData = {
   clients: [],
   debts: []
 };
 
+// --- COLORS FOR CHARTS ---
 const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'];
 
 export default function App() {
   // --- STATE ---
 const [postponedInfo, setPostponedInfo] = useState<{ date: number; note: string } | null>(null);
 const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([]);
-const [summaryPreview, setSummaryPreview] = useState<{ text: string; phone: string } | null>(null); // نافذة المعاينة
+const [summaryPreview, setSummaryPreview] = useState<{ text: string; phone: string } | null>(null);
 
   const [data, setData] = useState<AppData>(() => {
     const saved = localStorage.getItem('debtCollectorData');
@@ -49,7 +51,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
     localStorage.setItem('debtCollectorData', JSON.stringify(data));
   }, [data]);
 
-  // --- DATA MANAGEMENT ACTIONS ---
+  // --- ACTIONS ---
   const exportData = () => {
     const dataStr = JSON.stringify(data, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -69,7 +71,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
       try {
         const json = JSON.parse(e.target?.result as string);
         if (json.clients && json.debts) {
-          if (confirm('سيتم استبدال البيانات الحالية بالنسخة المرفوعة. هل تريد الاستمرار؟')) {
+          if (confirm('سيتم استبدال البيانات الحالية بالنسخة المرفوعة؟')) {
             setData(json);
             alert('تم استعادة البيانات بنجاح ✅');
           }
@@ -81,17 +83,14 @@ const [editClientPhone, setEditClientPhone] = useState('');
   };
 
   const resetAppData = () => {
-    if (confirm('تحذير نهائي: سيتم حذف جميع البيانات نهائياً؟')) {
+    if (confirm('سيتم حذف جميع البيانات نهائياً؟')) {
       setData({ clients: [], debts: [] });
       setSelectedClientId(null);
-      setEditingDebtId(null);
       setCurrentView('DASHBOARD');
       localStorage.removeItem('debtCollectorData');
-      alert('تم التصفير ✅');
     }
   };
 
-  // --- APP ACTIONS ---
   const addClient = (client: Omit<Client, 'id' | 'createdAt'>) => {
     const newClient: Client = { ...client, id: generateId(), createdAt: Date.now() };
     setData(prev => ({ ...prev, clients: [newClient, ...prev.clients] }));
@@ -107,20 +106,10 @@ const [editClientPhone, setEditClientPhone] = useState('');
     }));
     if (isEdit) {
        setData(prev => ({
-         ...prev, debts: prev.debts.map(d => d.id === id ? {
-            ...d, itemName, baseValue, profitPercentage, profitValue: profitVal,
-            totalValue: finalTotal, monthCount,
-            startDate: new Date(startDate).getTime(), paymentDay,
-            installments: procInst
-         } : d)
+         ...prev, debts: prev.debts.map(d => d.id === id ? { ...d, itemName, baseValue, profitPercentage, profitValue: profitVal, totalValue: finalTotal, monthCount, startDate: new Date(startDate).getTime(), paymentDay, installments: procInst } : d)
        }));
     } else {
-      const newDebt: Debt = {
-        id: generateId(), clientId, itemName, baseValue, profitPercentage, profitValue: profitVal,
-        totalValue: finalTotal, monthCount,
-        startDate: new Date(startDate).getTime(), paymentDay,
-        isFullyPaid: false, installments: procInst
-      };
+      const newDebt: Debt = { id: generateId(), clientId, itemName, baseValue, profitPercentage, profitValue: profitVal, totalValue: finalTotal, monthCount, startDate: new Date(startDate).getTime(), paymentDay, isFullyPaid: false, installments: procInst };
       newDebt.installments.forEach(i => i.debtId = newDebt.id);
       setData(prev => ({ ...prev, debts: [newDebt, ...prev.debts] }));
     }
@@ -137,13 +126,9 @@ const [editClientPhone, setEditClientPhone] = useState('');
         const current = debt.installments.find(i => i.id === installmentId);
         if(!current) return debt;
         const isPostponed = paidAmount === 0;
-        const updatedCurrent: Installment = {
-          ...current, amount: paidAmount, status: isPostponed ? InstallmentStatus.POSTPONED : InstallmentStatus.PAID,
-          paidDate: paidDate, notes: notes
-        };
+        const updatedCurrent: Installment = { ...current, amount: paidAmount, status: isPostponed ? InstallmentStatus.POSTPONED : InstallmentStatus.PAID, paidDate: paidDate, notes: notes };
         const all = [...past, updatedCurrent, ...newFutureInstallments].sort((a, b) => a.dueDate - b.dueDate);
-        const allPaid = all.every(i => i.status === InstallmentStatus.PAID || i.status === InstallmentStatus.POSTPONED);
-        return { ...debt, installments: all, isFullyPaid: allPaid, monthCount: all.length };
+        return { ...debt, installments: all, isFullyPaid: all.every(i => i.status === InstallmentStatus.PAID || i.status === InstallmentStatus.POSTPONED), monthCount: all.length };
       });
       return { ...prev, debts: newDebts };
     });
@@ -156,11 +141,11 @@ const [editClientPhone, setEditClientPhone] = useState('');
     setIsEditClientOpen(true);
   };
 
-  const saveEditClient = () => {
+  [span_6](start_span)[span_7](start_span)const saveEditClient = () => { // إعادة دالة حفظ تعديل العميل[span_6](end_span)[span_7](end_span)
     if (!selectedClientId) return;
     const name = editClientName.trim();
     const phone = editClientPhone.trim();
-    if (!name) return alert('الاسم مطلوب');
+    if (!name) return alert('الرجاء إدخال اسم العميل');
     setData(prev => ({ ...prev, clients: prev.clients.map(c => c.id === selectedClientId ? { ...c, name, phone } : c) }));
     setIsEditClientOpen(false);
   };
@@ -173,7 +158,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
   };
 
   const deleteDebt = (id: string) => {
-    if(!confirm('حذف هذه المديونية؟')) return;
+    if(!confirm('حذف المديونية؟')) return;
     setData(prev => ({ ...prev, debts: prev.debts.filter(d => d.id !== id) }));
   };
 
@@ -192,39 +177,22 @@ const [editClientPhone, setEditClientPhone] = useState('');
   const DashboardView = () => (
     <div className="pb-24 animate-fade-in text-right">
       <header className="bg-white p-6 pb-8 rounded-b-3xl shadow-sm mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">مرحباً بك 👋</h1>
-        <div className="mt-6 grid grid-cols-2 gap-4">
+        <h1 className="text-2xl font-bold text-gray-900">مرحباً بك 👋</h1>
+        <div className="mt-6 grid grid-cols-2 gap-4 text-center">
           <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-            <div className="flex items-center gap-2 mb-2 text-blue-600">
-              <Wallet size={20} />
-              <span className="text-xs font-semibold">إجمالي الديون</span>
+            <div className="flex items-center gap-2 mb-2 text-blue-600 justify-center">
+              <Wallet size={20} /><span className="text-xs font-semibold">إجمالي الديون</span>
             </div>
             <p className="text-xl font-bold text-gray-800">{formatCurrency(stats.totalLoaned + stats.totalProfit)}</p>
           </div>
           <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
-            <div className="flex items-center gap-2 mb-2 text-green-600">
-              <CheckCircle2 size={20} />
-              <span className="text-xs font-semibold">تم تحصيله</span>
+            <div className="flex items-center gap-2 mb-2 text-green-600 justify-center">
+              <CheckCircle2 size={20} /><span className="text-xs font-semibold">تم تحصيله</span>
             </div>
             <p className="text-xl font-bold text-gray-800">{formatCurrency(stats.totalCollected)}</p>
           </div>
         </div>
       </header>
-      <div className="px-4 space-y-6">
-        <div className="bg-white p-5 rounded-2xl shadow-sm">
-          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <TrendingUp size={18} className="text-gray-400" /> تحليل الأداء
-          </h3>
-          <div className="h-48 w-full">
-             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[{ name: 'أصل', value: stats.totalLoaned }, { name: 'ربح', value: stats.totalProfit }, { name: 'متبقي', value: stats.totalPending }]} barSize={40}>
-                  <XAxis dataKey="name" tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>{ [stats.totalLoaned, stats.totalProfit, stats.totalPending].map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />) }</Bar>
-                </BarChart>
-             </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
     </div>
   );
 
@@ -241,33 +209,24 @@ const [editClientPhone, setEditClientPhone] = useState('');
     }, [data.clients, data.debts]);
 
     const filteredClients = useMemo(() => {
-      return clientsWithTotals
-        .filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm))
-        .sort((a, b) => {
-          const aP = a.remaining <= 0; const bP = b.remaining <= 0;
-          if (aP && !bP) return 1;
-          if (!aP && bP) return -1;
-          if (!aP && !bP) return a.nextDate - b.nextDate; // الأقرب سداداً
-          return b.remaining - a.remaining;
-        });
+      return clientsWithTotals.filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm)).sort((a, b) => {
+        const aP = a.remaining <= 0; const bP = b.remaining <= 0;
+        if (aP && !bP) return 1; if (!aP && bP) return -1;
+        if (!aP && !bP) return a.nextDate - b.nextDate; // الترتيب المطلوب
+        return b.remaining - a.remaining;
+      });
     }, [clientsWithTotals, searchTerm]);
 
     return (
       <div className="pb-24 pt-4 px-4 h-full flex flex-col text-right">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">العملاء</h2>
-          <button onClick={() => setCurrentView('ADD_CLIENT')} className="text-blue-600 p-2 bg-blue-50 rounded-full"><UserPlus size={24} /></button>
-        </div>
-        <div className="relative mb-6">
-          <input type="text" placeholder="بحث..." className="w-full bg-white pl-4 pr-10 py-3 rounded-xl border-none shadow-sm text-sm focus:ring-2 focus:ring-blue-500 text-right" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          <Search className="absolute right-3 top-3 text-gray-400" size={20} />
-        </div>
+        <div className="flex justify-between items-center mb-4"><h2 className="text-2xl font-bold">العملاء</h2><button onClick={() => setCurrentView('ADD_CLIENT')} className="text-blue-600 p-2 bg-blue-50 rounded-full"><UserPlus size={24} /></button></div>
+        <div className="relative mb-6"><input type="text" placeholder="بحث..." className="w-full bg-white pl-4 pr-10 py-3 rounded-xl border-none shadow-sm text-sm text-right" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /><Search className="absolute right-3 top-3 text-gray-400" size={20} /></div>
         <div className="space-y-3 overflow-y-auto no-scrollbar pb-20">
           {filteredClients.map(client => (
-            <div key={client.id} onClick={() => { setSelectedClientId(client.id); setSelectedDebtIds([]); setCurrentView('CLIENT_DETAILS'); }} className={`bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer ${client.remaining <= 0 ? 'opacity-50 grayscale border-dashed border-gray-200' : 'border border-transparent'}`}>
+            <div key={client.id} onClick={() => { setSelectedClientId(client.id); setSelectedDebtIds([]); setCurrentView('CLIENT_DETAILS'); }} className={`bg-white p-4 rounded-xl shadow-sm cursor-pointer ${client.remaining <= 0 ? 'opacity-50 grayscale border-dashed border-gray-200' : ''}`}>
               <div className="flex justify-between items-start">
-                <div><h3 className={`font-bold ${client.remaining <= 0 ? 'text-gray-400' : 'text-gray-800'}`}>{client.name}</h3><p className="text-xs text-gray-500 mt-1">{client.phone}</p>
-                {client.remaining > 0 && client.nextDate !== Infinity && (<p className="text-[10px] text-blue-600 font-medium mt-1">القادم: {formatDate(client.nextDate)}</p>)}</div>
+                <div><h3 className="font-bold">{client.name}</h3><p className="text-xs text-gray-500">{client.phone}</p>
+                {client.remaining > 0 && client.nextDate !== Infinity && (<p className="text-[10px] text-blue-600 font-medium">القادم: {formatDate(client.nextDate)}</p>)}</div>
                 <div className="text-left"><span className="block text-xs text-gray-400">المتبقي</span><span className={`font-bold ${client.remaining <= 0 ? 'text-gray-400' : 'text-red-500'}`}>{client.remaining <= 0 ? '0' : formatCurrency(client.remaining)}</span></div>
               </div>
             </div>
@@ -288,29 +247,28 @@ const [editClientPhone, setEditClientPhone] = useState('');
 
     const handlePrepareSummary = () => {
       const selected = selectedDebtIds.length > 0 ? clientDebts.filter(d => selectedDebtIds.includes(d.id)) : clientDebts;
-      if (selected.length === 0) { alert('يرجى اختيار مديونية'); return; }
-      let text = `مرحباً ${client.name}،\nإليك ملخص حسابك للمديونيات المحددة:\n\n`;
+      let text = `مرحباً ${client.name}،\nإليك ملخص حسابك:\n\n`;
       let tA = 0, pA = 0;
       selected.forEach(d => {
         const p = d.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + i.amount, 0);
         text += `📌 *${d.itemName}*\n- إجمالي: ${formatCurrency(d.totalValue)}\n- المتبقي: ${formatCurrency(d.totalValue - p)}\n\n`;
         tA += d.totalValue; pA += p;
       });
-      if (selected.length > 1) text += `📊 *الإجمالي العام للمختار:*\n- إجمالي المتبقي: ${formatCurrency(tA - pA)}\n\n`;
-      text += `شكراً لتعاملك معنا.`;
+      if (selected.length > 1) text += `📊 *الإجمالي:* ${formatCurrency(tA - pA)}\n\n`;
+      text += `شكراً لك.`;
       setSummaryPreview({ text, phone: client.phone.replace(/\D/g, '') });
     };
 
-    const sendInstallmentReceipt = (debt: Debt, inst: Installment, receiptNumber: number) => {
+    const sendReceipt = (debt: Debt, inst: Installment, receiptNumber: number) => {
       const totalDebt = clientDebts.reduce((acc, d) => acc + (d.totalValue || 0), 0);
       const totalPaid = clientDebts.reduce((acc, d) => acc + d.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + (i.amount || 0), 0), 0);
-      const message = `سند سداد قسط\nالعميل: ${client.name} \nالمبلغ: ${formatCurrency(inst.amount)}\nالمتبقي الإجمالي: ${formatCurrency(totalDebt - totalPaid)}\nشكراً لسدادكم.`;
+      const message = `سند سداد قسط\nالعميل: ${client.name} \nالمبلغ: ${formatCurrency(inst.amount)}\nالمتبقي الإجمالي: ${formatCurrency(totalDebt - totalPaid)}\nشكراً لك.`;
       window.open(`https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
     return (
       <div className="pb-24 bg-gray-50 min-h-screen animate-fade-in text-right">
-        <div className="bg-white pb-6 pt-4 px-4 rounded-b-3xl shadow-sm sticky top-0 z-10">
+        <div className="bg-white pb-6 pt-4 px-4 rounded-b-3xl shadow-sm sticky top-0 z-10 text-center">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => { setSelectedClientId(null); setCurrentView('CLIENTS_LIST'); }} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button>
             <h2 className="font-bold text-lg">ملف العميل</h2>
@@ -319,29 +277,17 @@ const [editClientPhone, setEditClientPhone] = useState('');
               <button onClick={() => deleteClient(client.id)} className="text-red-500 p-2 bg-red-50 rounded-full"><Trash2 size={22} /></button>
             </div>
           </div>
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold mb-3 mx-auto">{client.name.charAt(0)}</div>
-            <h1 className="text-xl font-bold text-gray-900">{client.name}</h1>
-            <p className="text-gray-500 text-sm flex items-center gap-1 mt-1"><Phone size={14} /> {client.phone}</p>
-            <button onClick={handlePrepareSummary} className="mt-4 flex items-center gap-2 bg-green-50 text-green-700 px-6 py-2 rounded-xl font-bold mx-auto"><Send size={16} /> كشف حساب</button>
-          </div>
+          <h1 className="text-xl font-bold">{client.name}</h1>
+          <button onClick={handlePrepareSummary} className="mt-4 flex items-center gap-2 bg-green-50 text-green-700 px-6 py-2 rounded-xl font-bold mx-auto"><Send size={16} /> كشف حساب</button>
         </div>
         <div className="px-4 mt-6 space-y-6">
-           <div className="flex justify-between items-center">
-             <h3 className="font-bold text-gray-800">الديون المسجلة</h3>
-             <button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg">+ مديونية جديدة</button>
-           </div>
-	         {clientDebts.map(debt => (
-             <div key={debt.id} className={`bg-white rounded-2xl shadow-sm overflow-hidden border transition-all ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-100'}`}>
-               <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
-                 <div className="flex items-center gap-3">
-                   <input type="checkbox" checked={selectedDebtIds.includes(debt.id)} onChange={() => toggleDebtSelection(debt.id)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                   <div><h4 className="font-bold text-gray-900">{debt.itemName}</h4>
-                   <p className="text-xs text-gray-500 mt-1">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div>
-                 </div>
+           {clientDebts.map(debt => (
+             <div key={debt.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1' : 'border-gray-100'}`}>
+               <div className="p-4 border-b bg-gray-50/50 flex justify-between items-start">
+                 <div className="flex items-center gap-3"><input type="checkbox" checked={selectedDebtIds.includes(debt.id)} onChange={() => toggleDebtSelection(debt.id)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" /><div><h4 className="font-bold text-gray-900">{debt.itemName}</h4><p className="text-xs text-gray-500">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div></div>
                  <div className="flex gap-2">
-                   <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"><Edit size={16} /></button>
-                   <button onClick={() => deleteDebt(debt.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><Trash2 size={16} /></button>
+                   <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg"><Edit size={16} /></button>
+                   <button onClick={() => deleteDebt(debt.id)} className="p-2 bg-red-50 text-red-500 rounded-lg"><Trash2 size={16} /></button>
                  </div>
                </div>
                <div className="divide-y divide-gray-100">
@@ -349,20 +295,19 @@ const [editClientPhone, setEditClientPhone] = useState('');
                    <div key={inst.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                      <div className="flex items-center gap-3">
                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${inst.status === 'PAID' ? 'bg-green-100 text-green-700' : inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'}`}>{idx + 1}</span>
-                       <div><p className="text-sm font-medium text-gray-900">{formatCurrency(inst.amount)}</p><p className="text-xs text-gray-500">{formatDate(inst.dueDate)}</p></div>
+                       <div><p className="text-sm font-medium">{formatCurrency(inst.amount)}</p><p className="text-xs text-gray-500">{formatDate(inst.dueDate)}</p></div>
                      </div>
                      {inst.status === InstallmentStatus.PAID || inst.status === InstallmentStatus.POSTPONED ? (
                        <div className="flex items-center gap-2">
-                         {inst.status === InstallmentStatus.PAID && (<button onClick={() => sendInstallmentReceipt(debt, inst, idx)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100"><Receipt size={16} /></button>)}
+                         {inst.status === InstallmentStatus.PAID && (<button onClick={() => sendReceipt(debt, inst, idx)} className="text-green-600 bg-green-50 p-1.5 rounded-md"><Receipt size={16} /></button>)}
                          <button onClick={() => inst.status === InstallmentStatus.POSTPONED && setPostponedInfo({ date: inst.dueDate, note: inst.notes || '' })} className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</button>
                        </div>
                      ) : (
-                       <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">تسجيل سداد</button>
+                       <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg">تسجيل سداد</button>
                      )}
                    </div>
                  ))}
                </div>
-               <div className="p-3 bg-gray-50 border-t border-gray-100 text-center"><div className="flex justify-between items-center text-sm"><span className="text-gray-500">الإجمالي:</span><span className="font-bold text-gray-800">{formatCurrency(debt.totalValue)}</span></div></div>
              </div>
            ))}
         </div>
@@ -407,11 +352,11 @@ const [editClientPhone, setEditClientPhone] = useState('');
                 {balanceAfterThisPayment > 0 && (
                     <div className="bg-white p-5 rounded-2xl shadow-sm space-y-4 border-t-4 border-orange-400">
                         <div className="flex justify-between items-center font-bold text-orange-600"><h3>جدولة المتبقي</h3><span>{formatCurrency(balanceAfterThisPayment)}</span></div>
-                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl"><span className="text-sm font-medium">الأشهر القادمة</span><div className="flex items-center gap-4"><button onClick={() => setRemainingMonths(Math.max(1, remainingMonths - 1))} className="w-8 h-8 rounded-full bg-white">-</button><span className="font-bold">{remainingMonths}</span><button onClick={() => setRemainingMonths(remainingMonths + 1)} className="w-8 h-8 rounded-full bg-white">+</button></div></div>
-                        <div className="divide-y">{previewInstallments.map((p, i) => (<div key={i} className="p-2 flex justify-between text-xs bg-white"><span>{i+1}</span><span className="font-bold">{formatCurrency(p.amount)}</span></div>))}</div>
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl"><span className="text-sm font-medium">عدد الأشهر</span><div className="flex items-center gap-4"><button onClick={() => setRemainingMonths(Math.max(1, remainingMonths - 1))} className="w-8 h-8 rounded-full bg-white">-</button><span className="font-bold">{remainingMonths}</span><button onClick={() => setRemainingMonths(remainingMonths + 1)} className="w-8 h-8 rounded-full bg-white">+</button></div></div>
+                        <div className="divide-y">{previewInstallments.map((inst, idx) => (<div key={idx} className="p-2 flex justify-between text-xs bg-white"><span>قسط {idx+1}</span><span className="font-bold">{formatCurrency(inst.amount)}</span></div>))}</div>
                     </div>
                 )}
-                <button onClick={() => processPayment(debt.id, installment.id, paymentAmount, new Date(paymentDate).getTime(), notes, previewInstallments)} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">{paymentAmount === 0 ? 'تأكيد التأجيل' : 'تأكيد السداد'}</button>
+                <button onClick={() => processPayment(debt.id, installment.id, paymentAmount, new Date(paymentDate).getTime(), notes, previewInstallments)} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">{paymentAmount === 0 ? 'تأكيد التأجيل والجدولة' : 'تأكيد السداد والجدولة'}</button>
             </div>
         </div>
     );
@@ -467,12 +412,11 @@ const [editClientPhone, setEditClientPhone] = useState('');
                    <button onClick={() => setProfitType('PERCENTAGE')} className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1 ${profitType === 'PERCENTAGE' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}><Percent size={14} /> نسبة</button>
                    <button onClick={() => setProfitType('FIXED')} className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1 ${profitType === 'FIXED' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}><Coins size={14} /> مبلغ ثابت</button>
                 </div>
-                {profitType === 'PERCENTAGE' ? (<div><label className="block text-xs text-gray-500 mb-1">الربح (%)</label><div className="flex gap-2"><input type="number" value={profitPercentage} onChange={e => setProfitPercentage(Number(e.target.value))} className="w-24 p-2 bg-white rounded-lg border text-center font-bold" /><div className="flex-1 p-2 bg-gray-100 rounded-lg border flex items-center justify-between px-3 font-bold">{formatCurrency(Number(fixedProfit) || 0)}</div></div></div>) : (<div><label className="block text-xs text-gray-500 mb-1">مبلغ الربح (ريال)</label><input type="number" value={fixedProfit} onChange={e => handleFixedProfitChange(Number(e.target.value))} className="w-full p-2 bg-white rounded-lg border font-bold text-right" /></div>)}
+                {profitType === 'PERCENTAGE' ? (<div><label className="block text-xs text-gray-500 mb-1">نسبة الربح (%)</label><div className="flex gap-2"><input type="number" value={profitPercentage} onChange={e => setProfitPercentage(Number(e.target.value))} className="w-24 p-2 bg-white rounded-lg border text-center font-bold" /><div className="flex-1 p-2 bg-gray-100 rounded-lg border flex items-center justify-between px-3 font-bold">{formatCurrency(Number(fixedProfit) || 0)}</div></div></div>) : (<div><label className="block text-xs text-gray-500 mb-1">مبلغ الربح (ريال)</label><input type="number" value={fixedProfit} onChange={e => handleFixedProfitChange(Number(e.target.value))} className="w-full p-2 bg-white rounded-lg border font-bold text-right" /></div>)}
              </div>
              <div className="flex justify-between items-center bg-blue-50 p-3 rounded-lg border text-blue-800 font-bold"><span>إجمالي المديونية</span><span>{formatCurrency(targetTotal)}</span></div>
            </div>
            <div className="bg-white p-4 rounded-xl shadow-sm space-y-4 text-right">
-             <div className="grid grid-cols-2 gap-4"><div><label className="block text-xs text-gray-500 mb-1">الأشهر</label><input type="number" value={months} onChange={e => setMonths(Number(e.target.value))} className="w-full p-3 bg-gray-50 rounded-lg border text-right" /></div><div><label className="block text-xs text-gray-500 mb-1">يوم السداد</label><input type="number" value={paymentDay} onChange={e => setPaymentDay(Number(e.target.value))} className="w-full p-3 bg-gray-50 rounded-lg border text-right" /></div></div>
              <button onClick={handleRecalculate} className="w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-lg border">إنشاء جدول الأقساط</button>
              <div className="mt-4"><div className="flex justify-between items-center mb-2"><span className="text-sm font-bold">جدول الأقساط</span><span className={`font-bold ${currentTotal === targetTotal ? 'text-green-600' : 'text-red-500'}`}>{formatCurrency(currentTotal)}</span></div><div className="max-h-80 overflow-y-auto border rounded-lg divide-y bg-gray-50">{manualInstallments.map((inst, idx) => { const isLast = idx === manualInstallments.length - 1; return (<div key={idx} className="p-2 flex gap-2 items-center text-sm"><span className="w-6 text-center text-gray-400">{idx + 1}</span><input type="date" className="p-1 rounded border text-xs" value={new Date(inst.dueDate).toISOString().split('T')[0]} onChange={(e) => updateInstallment(idx, 'dueDate', e.target.value)} /><input type="number" className={`p-1 rounded border text-xs w-24 font-bold text-right ${isLast ? 'bg-gray-100' : ''}`} value={inst.amount} onChange={(e) => updateInstallment(idx, 'amount', e.target.value)} disabled={isLast} /></div>); })}</div></div>
            </div>
@@ -484,13 +428,25 @@ const [editClientPhone, setEditClientPhone] = useState('');
 
   return (
     <>
+      [span_8](start_span){isEditClientOpen && ( // إعادة نافذة تعديل العميل[span_8](end_span)
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-4 text-right">
+            <h3 className="font-bold mb-3">تعديل بيانات العميل</h3>
+            <div className="space-y-3">
+              <div><label className="block text-xs text-gray-500 mb-1">الاسم</label><input value={editClientName} onChange={e => setEditClientName(e.target.value)} className="w-full p-3 bg-gray-50 border rounded-xl text-right" /></div>
+              <div><label className="block text-xs text-gray-500 mb-1">الجوال</label><input value={editClientPhone} onChange={e => setEditClientPhone(e.target.value)} className="w-full p-3 bg-gray-50 border rounded-xl text-right" /></div>
+            </div>
+            <div className="flex gap-2 mt-4"><button onClick={saveEditClient} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">حفظ</button><button onClick={() => setIsEditClientOpen(false)} className="flex-1 bg-gray-100 py-3 rounded-xl">إلغاء</button></div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative shadow-2xl overflow-hidden font-tajawal">
         {currentView === 'DASHBOARD' && <DashboardView />}
         {currentView === 'CLIENTS_LIST' && <ClientsListView />}
         {currentView === 'CLIENT_DETAILS' && <ClientDetailsView />}
         {currentView === 'RECORD_PAYMENT' && <RecordPaymentView />}
         {(currentView === 'ADD_DEBT' || currentView === 'EDIT_DEBT') && <DebtFormView />}
-        {currentView === 'SETTINGS' && <SettingsView />}
         <TabBar currentView={currentView} onChangeView={setCurrentView} />
       </div>
 
