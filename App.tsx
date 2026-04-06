@@ -10,13 +10,11 @@ import { TabBar } from './components/TabBar';
 import { Client, Debt, Installment, AppData, ViewState, InstallmentStatus } from './types';
 import { formatCurrency, formatDate, generateId, calculatePlan } from './utils';
 
-// --- EMPTY INITIAL DATA ---
 const INITIAL_DATA: AppData = {
   clients: [],
   debts: []
 };
 
-// --- COLORS FOR CHARTS ---
 const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'];
 
 export default function App() {
@@ -83,7 +81,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
   };
 
   const resetAppData = () => {
-    if (confirm('سيتم حذف جميع البيانات نهائياً؟')) {
+    if (confirm('حذف جميع البيانات نهائياً؟')) {
       setData({ clients: [], debts: [] });
       setSelectedClientId(null);
       setCurrentView('DASHBOARD');
@@ -141,17 +139,17 @@ const [editClientPhone, setEditClientPhone] = useState('');
     setIsEditClientOpen(true);
   };
 
-  [span_6](start_span)[span_7](start_span)const saveEditClient = () => { // إعادة دالة حفظ تعديل العميل[span_6](end_span)[span_7](end_span)
+  const saveEditClient = () => {
     if (!selectedClientId) return;
     const name = editClientName.trim();
     const phone = editClientPhone.trim();
-    if (!name) return alert('الرجاء إدخال اسم العميل');
+    if (!name) return alert('الاسم مطلوب');
     setData(prev => ({ ...prev, clients: prev.clients.map(c => c.id === selectedClientId ? { ...c, name, phone } : c) }));
     setIsEditClientOpen(false);
   };
 
   const deleteClient = (id: string) => {
-    if(!confirm('حذف العميل وجميع ديونه؟')) return;
+    if(!confirm('حذف العميل؟')) return;
     setData(prev => ({ clients: prev.clients.filter(c => c.id !== id), debts: prev.debts.filter(d => d.clientId !== id) }));
     setSelectedClientId(null);
     setCurrentView('CLIENTS_LIST');
@@ -174,21 +172,19 @@ const [editClientPhone, setEditClientPhone] = useState('');
     return { totalLoaned: tL, totalProfit: tP, totalCollected: tC, totalPending: tPe };
   }, [data.debts]);
 
+  // --- VIEWS ---
+
   const DashboardView = () => (
     <div className="pb-24 animate-fade-in text-right">
       <header className="bg-white p-6 pb-8 rounded-b-3xl shadow-sm mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">مرحباً بك 👋</h1>
-        <div className="mt-6 grid grid-cols-2 gap-4 text-center">
-          <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-            <div className="flex items-center gap-2 mb-2 text-blue-600 justify-center">
-              <Wallet size={20} /><span className="text-xs font-semibold">إجمالي الديون</span>
-            </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1 text-center">مرحباً بك 👋</h1>
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center">
+            <div className="flex items-center gap-2 mb-2 text-blue-600 justify-center"><Wallet size={20} /><span className="text-xs font-semibold">إجمالي الديون</span></div>
             <p className="text-xl font-bold text-gray-800">{formatCurrency(stats.totalLoaned + stats.totalProfit)}</p>
           </div>
-          <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
-            <div className="flex items-center gap-2 mb-2 text-green-600 justify-center">
-              <CheckCircle2 size={20} /><span className="text-xs font-semibold">تم تحصيله</span>
-            </div>
+          <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
+            <div className="flex items-center gap-2 mb-2 text-green-600 justify-center"><CheckCircle2 size={20} /><span className="text-xs font-semibold">تم تحصيله</span></div>
             <p className="text-xl font-bold text-gray-800">{formatCurrency(stats.totalCollected)}</p>
           </div>
         </div>
@@ -212,7 +208,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
       return clientsWithTotals.filter(c => c.name.includes(searchTerm) || c.phone.includes(searchTerm)).sort((a, b) => {
         const aP = a.remaining <= 0; const bP = b.remaining <= 0;
         if (aP && !bP) return 1; if (!aP && bP) return -1;
-        if (!aP && !bP) return a.nextDate - b.nextDate; // الترتيب المطلوب
+        if (!aP && !bP) return a.nextDate - b.nextDate; // ترتيب الأقرب سداداً
         return b.remaining - a.remaining;
       });
     }, [clientsWithTotals, searchTerm]);
@@ -223,10 +219,10 @@ const [editClientPhone, setEditClientPhone] = useState('');
         <div className="relative mb-6"><input type="text" placeholder="بحث..." className="w-full bg-white pl-4 pr-10 py-3 rounded-xl border-none shadow-sm text-sm text-right" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /><Search className="absolute right-3 top-3 text-gray-400" size={20} /></div>
         <div className="space-y-3 overflow-y-auto no-scrollbar pb-20">
           {filteredClients.map(client => (
-            <div key={client.id} onClick={() => { setSelectedClientId(client.id); setSelectedDebtIds([]); setCurrentView('CLIENT_DETAILS'); }} className={`bg-white p-4 rounded-xl shadow-sm cursor-pointer ${client.remaining <= 0 ? 'opacity-50 grayscale border-dashed border-gray-200' : ''}`}>
+            <div key={client.id} onClick={() => { setSelectedClientId(client.id); setSelectedDebtIds([]); setCurrentView('CLIENT_DETAILS'); }} className={`bg-white p-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer ${client.remaining <= 0 ? 'opacity-50 grayscale border-dashed border-gray-200' : ''}`}>
               <div className="flex justify-between items-start">
                 <div><h3 className="font-bold">{client.name}</h3><p className="text-xs text-gray-500">{client.phone}</p>
-                {client.remaining > 0 && client.nextDate !== Infinity && (<p className="text-[10px] text-blue-600 font-medium">القادم: {formatDate(client.nextDate)}</p>)}</div>
+                {client.remaining > 0 && client.nextDate !== Infinity && (<p className="text-[10px] text-blue-600 font-medium mt-1">القادم: {formatDate(client.nextDate)}</p>)}</div>
                 <div className="text-left"><span className="block text-xs text-gray-400">المتبقي</span><span className={`font-bold ${client.remaining <= 0 ? 'text-gray-400' : 'text-red-500'}`}>{client.remaining <= 0 ? '0' : formatCurrency(client.remaining)}</span></div>
               </div>
             </div>
@@ -260,9 +256,9 @@ const [editClientPhone, setEditClientPhone] = useState('');
     };
 
     const sendReceipt = (debt: Debt, inst: Installment, receiptNumber: number) => {
-      const totalDebt = clientDebts.reduce((acc, d) => acc + (d.totalValue || 0), 0);
-      const totalPaid = clientDebts.reduce((acc, d) => acc + d.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + (i.amount || 0), 0), 0);
-      const message = `سند سداد قسط\nالعميل: ${client.name} \nالمبلغ: ${formatCurrency(inst.amount)}\nالمتبقي الإجمالي: ${formatCurrency(totalDebt - totalPaid)}\nشكراً لك.`;
+      const tD = clientDebts.reduce((acc, d) => acc + (d.totalValue || 0), 0);
+      const tP = clientDebts.reduce((acc, d) => acc + d.installments.filter(i => i.status === InstallmentStatus.PAID).reduce((s, i) => s + (i.amount || 0), 0), 0);
+      const message = `سند سداد قسط\nالعميل: ${client.name} \nالمبلغ: ${formatCurrency(inst.amount)}\nالمتبقي الإجمالي: ${formatCurrency(tD - tP)}\nشكراً لسدادكم.`;
       window.open(`https://wa.me/${client.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
     };
 
@@ -273,21 +269,24 @@ const [editClientPhone, setEditClientPhone] = useState('');
             <button onClick={() => { setSelectedClientId(null); setCurrentView('CLIENTS_LIST'); }} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button>
             <h2 className="font-bold text-lg">ملف العميل</h2>
             <div className="flex items-center gap-2">
-              <button onClick={() => openEditClient(client)} className="text-blue-600 p-2 bg-blue-50 rounded-full"><Edit size={22} /></button>
-              <button onClick={() => deleteClient(client.id)} className="text-red-500 p-2 bg-red-50 rounded-full"><Trash2 size={22} /></button>
+              <button onClick={() => openEditClient(client)} className="text-blue-600 p-2 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors"><Edit size={22} /></button>
+              <button onClick={() => deleteClient(client.id)} className="text-red-500 p-2 bg-red-50 rounded-full hover:bg-red-100 transition-colors"><Trash2 size={22} /></button>
             </div>
           </div>
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">{client.name[0]}</div>
           <h1 className="text-xl font-bold">{client.name}</h1>
+          <p className="text-gray-500 text-sm mt-1">{client.phone}</p>
           <button onClick={handlePrepareSummary} className="mt-4 flex items-center gap-2 bg-green-50 text-green-700 px-6 py-2 rounded-xl font-bold mx-auto"><Send size={16} /> كشف حساب</button>
         </div>
         <div className="px-4 mt-6 space-y-6">
+           <div className="flex justify-between items-center"><h3 className="font-bold text-gray-800">الديون المسجلة</h3><button onClick={() => { setEditingDebtId(null); setCurrentView('ADD_DEBT'); }} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">+ مديونية جديدة</button></div>
            {clientDebts.map(debt => (
-             <div key={debt.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1' : 'border-gray-100'}`}>
+             <div key={debt.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-all ${selectedDebtIds.includes(debt.id) ? 'border-blue-500 ring-1' : 'border-gray-100'}`}>
                <div className="p-4 border-b bg-gray-50/50 flex justify-between items-start">
-                 <div className="flex items-center gap-3"><input type="checkbox" checked={selectedDebtIds.includes(debt.id)} onChange={() => toggleDebtSelection(debt.id)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" /><div><h4 className="font-bold text-gray-900">{debt.itemName}</h4><p className="text-xs text-gray-500">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div></div>
+                 <div className="flex items-center gap-3"><input type="checkbox" checked={selectedDebtIds.includes(debt.id)} onChange={() => toggleDebtSelection(debt.id)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" /><div><h4 className="font-bold">{debt.itemName}</h4><p className="text-xs text-gray-500">أصل: {formatCurrency(debt.baseValue)} | ربح: {debt.profitPercentage.toFixed(1)}%</p></div></div>
                  <div className="flex gap-2">
-                   <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg"><Edit size={16} /></button>
-                   <button onClick={() => deleteDebt(debt.id)} className="p-2 bg-red-50 text-red-500 rounded-lg"><Trash2 size={16} /></button>
+                   <button onClick={() => { setEditingDebtId(debt.id); setCurrentView('EDIT_DEBT'); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300"><Edit size={16} /></button>
+                   <button onClick={() => deleteDebt(debt.id)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"><Trash2 size={16} /></button>
                  </div>
                </div>
                <div className="divide-y divide-gray-100">
@@ -299,15 +298,16 @@ const [editClientPhone, setEditClientPhone] = useState('');
                      </div>
                      {inst.status === InstallmentStatus.PAID || inst.status === InstallmentStatus.POSTPONED ? (
                        <div className="flex items-center gap-2">
-                         {inst.status === InstallmentStatus.PAID && (<button onClick={() => sendReceipt(debt, inst, idx)} className="text-green-600 bg-green-50 p-1.5 rounded-md"><Receipt size={16} /></button>)}
+                         {inst.status === InstallmentStatus.PAID && (<button onClick={() => sendReceipt(debt, inst, idx)} className="text-green-600 bg-green-50 p-1.5 rounded-md hover:bg-green-100"><Receipt size={16} /></button>)}
                          <button onClick={() => inst.status === InstallmentStatus.POSTPONED && setPostponedInfo({ date: inst.dueDate, note: inst.notes || '' })} className={`text-xs font-bold px-2 py-1 rounded-md ${inst.status === InstallmentStatus.POSTPONED ? 'bg-orange-50 text-orange-600' : 'bg-green-50 text-green-600'}`}>{inst.status === InstallmentStatus.POSTPONED ? 'تم التأجيل' : 'مدفوع'}</button>
                        </div>
                      ) : (
-                       <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg">تسجيل سداد</button>
+                       <button onClick={() => { setEditingDebtId(debt.id); setSelectedInstallmentId(inst.id); setCurrentView('RECORD_PAYMENT'); }} className="text-xs font-medium bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">تسجيل سداد</button>
                      )}
                    </div>
                  ))}
                </div>
+               <div className="p-3 bg-gray-50 border-t border-gray-100 text-center"><div className="flex justify-between items-center text-sm font-bold"><span>الإجمالي:</span><span>{formatCurrency(debt.totalValue)}</span></div></div>
              </div>
            ))}
         </div>
@@ -342,7 +342,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
 
     return (
         <div className="bg-gray-50 min-h-screen pb-20 animate-fade-in text-right">
-            <div className="bg-white px-4 pt-6 pb-4 border-b flex items-center sticky top-0 z-20"><button onClick={() => setCurrentView('CLIENT_DETAILS')} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button><h2 className="text-xl font-bold mr-2">تسجيل دفعة</h2></div>
+            <div className="bg-white px-4 pt-6 pb-4 border-b flex items-center shadow-sm sticky top-0 z-20"><button onClick={() => setCurrentView('CLIENT_DETAILS')} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button><h2 className="text-xl font-bold mr-2">تسجيل دفعة</h2></div>
             <div className="p-4 space-y-4">
                 <div className="bg-white p-5 rounded-2xl shadow-sm space-y-4">
                     <div><label className="block text-xs text-gray-500 mb-1">المبلغ المدفوع</label><input type="number" value={paymentAmount} onChange={e => setPaymentAmount(Number(e.target.value))} className="w-full p-3 bg-gray-50 border rounded-xl font-bold text-right" /></div>
@@ -352,8 +352,8 @@ const [editClientPhone, setEditClientPhone] = useState('');
                 {balanceAfterThisPayment > 0 && (
                     <div className="bg-white p-5 rounded-2xl shadow-sm space-y-4 border-t-4 border-orange-400">
                         <div className="flex justify-between items-center font-bold text-orange-600"><h3>جدولة المتبقي</h3><span>{formatCurrency(balanceAfterThisPayment)}</span></div>
-                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl"><span className="text-sm font-medium">عدد الأشهر</span><div className="flex items-center gap-4"><button onClick={() => setRemainingMonths(Math.max(1, remainingMonths - 1))} className="w-8 h-8 rounded-full bg-white">-</button><span className="font-bold">{remainingMonths}</span><button onClick={() => setRemainingMonths(remainingMonths + 1)} className="w-8 h-8 rounded-full bg-white">+</button></div></div>
-                        <div className="divide-y">{previewInstallments.map((inst, idx) => (<div key={idx} className="p-2 flex justify-between text-xs bg-white"><span>قسط {idx+1}</span><span className="font-bold">{formatCurrency(inst.amount)}</span></div>))}</div>
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl"><span className="text-sm font-medium">عدد الأشهر</span><div className="flex items-center gap-4"><button onClick={() => setRemainingMonths(Math.max(1, remainingMonths - 1))} className="w-10 h-10 rounded-full bg-white shadow-sm border flex items-center justify-center text-red-500">-</button><span className="font-bold text-lg">{remainingMonths}</span><button onClick={() => setRemainingMonths(remainingMonths + 1)} className="w-10 h-10 rounded-full bg-white shadow-sm border flex items-center justify-center text-green-600">+</button></div></div>
+                        <div className="divide-y">{previewInstallments.map((inst, idx) => (<div key={idx} className="p-2 flex justify-between items-center text-sm bg-white"><span>قسط {idx+1}</span><span className="font-bold">{formatCurrency(inst.amount)}</span></div>))}</div>
                     </div>
                 )}
                 <button onClick={() => processPayment(debt.id, installment.id, paymentAmount, new Date(paymentDate).getTime(), notes, previewInstallments)} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">{paymentAmount === 0 ? 'تأكيد التأجيل والجدولة' : 'تأكيد السداد والجدولة'}</button>
@@ -403,8 +403,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
       <div className="bg-gray-50 min-h-screen pb-24 text-right animate-fade-in">
         <div className="bg-white px-4 pt-6 pb-4 border-b flex items-center shadow-sm sticky top-0 z-20"><button onClick={() => setCurrentView('CLIENT_DETAILS')} className="p-2 -mr-2 text-gray-600"><ArrowLeft /></button><h2 className="text-xl font-bold mr-2">{isEditMode ? 'تعديل' : 'إضافة'} مديونية</h2></div>
         <div className="p-4 space-y-5">
-           <div className="bg-white p-4 rounded-xl shadow-sm space-y-4 text-right">
-             <h3 className="font-bold text-gray-800 flex items-center gap-2 border-b pb-2 mb-2"><FileText size={18} className="text-blue-500" /> تفاصيل السلعة</h3>
+           <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
              <div><label className="block text-xs text-gray-500 mb-1">اسم السلعة</label><input type="text" value={itemName} onChange={e => setItemName(e.target.value)} className="w-full p-3 bg-gray-50 rounded-lg border text-right" /></div>
              <div><label className="block text-xs text-gray-500 mb-1">رأس المال</label><input type="number" value={baseValue} onChange={e => handleBaseValueChange(Number(e.target.value))} className="w-full p-3 bg-gray-50 rounded-lg border font-bold text-right" /></div>
              <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
@@ -416,7 +415,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
              </div>
              <div className="flex justify-between items-center bg-blue-50 p-3 rounded-lg border text-blue-800 font-bold"><span>إجمالي المديونية</span><span>{formatCurrency(targetTotal)}</span></div>
            </div>
-           <div className="bg-white p-4 rounded-xl shadow-sm space-y-4 text-right">
+           <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
              <button onClick={handleRecalculate} className="w-full py-2 bg-gray-100 text-gray-700 font-bold rounded-lg border">إنشاء جدول الأقساط</button>
              <div className="mt-4"><div className="flex justify-between items-center mb-2"><span className="text-sm font-bold">جدول الأقساط</span><span className={`font-bold ${currentTotal === targetTotal ? 'text-green-600' : 'text-red-500'}`}>{formatCurrency(currentTotal)}</span></div><div className="max-h-80 overflow-y-auto border rounded-lg divide-y bg-gray-50">{manualInstallments.map((inst, idx) => { const isLast = idx === manualInstallments.length - 1; return (<div key={idx} className="p-2 flex gap-2 items-center text-sm"><span className="w-6 text-center text-gray-400">{idx + 1}</span><input type="date" className="p-1 rounded border text-xs" value={new Date(inst.dueDate).toISOString().split('T')[0]} onChange={(e) => updateInstallment(idx, 'dueDate', e.target.value)} /><input type="number" className={`p-1 rounded border text-xs w-24 font-bold text-right ${isLast ? 'bg-gray-100' : ''}`} value={inst.amount} onChange={(e) => updateInstallment(idx, 'amount', e.target.value)} disabled={isLast} /></div>); })}</div></div>
            </div>
@@ -428,7 +427,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
 
   return (
     <>
-      [span_8](start_span){isEditClientOpen && ( // إعادة نافذة تعديل العميل[span_8](end_span)
+      {isEditClientOpen && ( // نافذة تعديل العميل
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-4 text-right">
             <h3 className="font-bold mb-3">تعديل بيانات العميل</h3>
@@ -436,7 +435,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
               <div><label className="block text-xs text-gray-500 mb-1">الاسم</label><input value={editClientName} onChange={e => setEditClientName(e.target.value)} className="w-full p-3 bg-gray-50 border rounded-xl text-right" /></div>
               <div><label className="block text-xs text-gray-500 mb-1">الجوال</label><input value={editClientPhone} onChange={e => setEditClientPhone(e.target.value)} className="w-full p-3 bg-gray-50 border rounded-xl text-right" /></div>
             </div>
-            <div className="flex gap-2 mt-4"><button onClick={saveEditClient} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">حفظ</button><button onClick={() => setIsEditClientOpen(false)} className="flex-1 bg-gray-100 py-3 rounded-xl">إلغاء</button></div>
+            <div className="flex gap-2 mt-4"><button onClick={saveEditClient} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold">حفظ</button><button onClick={() => setIsEditClientOpen(false)} className="flex-1 bg-gray-100 py-3 rounded-xl font-bold">إلغاء</button></div>
           </div>
         </div>
       )}
@@ -447,6 +446,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
         {currentView === 'CLIENT_DETAILS' && <ClientDetailsView />}
         {currentView === 'RECORD_PAYMENT' && <RecordPaymentView />}
         {(currentView === 'ADD_DEBT' || currentView === 'EDIT_DEBT') && <DebtFormView />}
+        {currentView === 'SETTINGS' && <SettingsView />}
         <TabBar currentView={currentView} onChangeView={setCurrentView} />
       </div>
 
@@ -464,7 +464,7 @@ const [editClientPhone, setEditClientPhone] = useState('');
       )}
 
       {postponedInfo !== null && (
-        <div onClick={() => setPostponedInfo(null)} className="fixed inset-0 z-[999999] bg-black/45 flex items-center justify-center">
+        <div onClick={() => setPostponedInfo(null)} className="fixed inset-0 z-[999999] bg-black/45 flex items-center justify-center text-right">
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-[14px] p-[18px] w-[90%] max-w-[420px] shadow-2xl text-center">
             <div style={{color:'#FF7700' , fontWeight: 800, marginBottom: 6 }}>تفاصيل التأجيل</div>
             <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>تاريخ القسط: {formatDate(postponedInfo.date)}</div>
